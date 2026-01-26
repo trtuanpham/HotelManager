@@ -41,6 +41,7 @@ export const langVN = {
     statusAvailable: "Trống",
     statusOccupied: "Đã thuê",
     statusMaintenance: "Bảo trì",
+    statusCleaning: "Đang dọn dẹp",
   },
 
   // Rooms

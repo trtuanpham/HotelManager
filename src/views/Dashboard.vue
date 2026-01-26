@@ -30,20 +30,25 @@
 
     <div class="dashboard-section full">
       <h2>{{ lang.dashboard.roomStatusManagement }}</h2>
-      <div class="rooms-grid">
-        <div 
-          v-for="room in store.rooms" 
-          :key="room.id"
-          :class="['room-card', room.status.toLowerCase()]"
-        >
-          <div class="room-card-content">
-            <div class="room-number">{{ room.number }}</div>
-            <div class="room-type">{{ room.type }}</div>
-            <div class="room-status-text">{{ getRoomStatusLabel(room.status) }}</div>
-            <div v-if="room.guest" class="room-guest">{{ room.guest }}</div>
+      <template v-for="(rooms, group) in roomsByGroup" :key="group">
+        <div class="room-group">
+          <h3 class="group-title">{{ lang.dashboard.group || 'Group' }} {{ group }}</h3>
+          <div class="rooms-grid">
+            <div 
+              v-for="room in rooms" 
+              :key="room.id"
+              :class="['room-card', room.status.toLowerCase()]"
+            >
+              <div class="room-card-content">
+                <div class="room-number">{{ room.number }}</div>
+                <div class="room-type">{{ room.type }}</div>
+                <div class="room-status-text">{{ getRoomStatusLabel(room.status) }}</div>
+                <div v-if="room.guest" class="room-guest">{{ room.guest }}</div>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
+      </template>
     </div>
 
     <!-- <div class="dashboard-grid">
@@ -129,6 +134,17 @@ const upcomingBookings = computed(() =>
   store.bookings.slice(0, 5)
 )
 
+const roomsByGroup = computed(() => {
+  const grouped = {}
+  store.rooms.forEach(room => {
+    if (!grouped[room.group]) {
+      grouped[room.group] = []
+    }
+    grouped[room.group].push(room)
+  })
+  return grouped
+})
+
 const formatDate = (date) => {
   return new Date(date).toLocaleDateString('vi-VN')
 }
@@ -146,7 +162,8 @@ const getRoomStatusLabel = (status) => {
   const statusMap = {
     'Available': lang.dashboard.statusAvailable,
     'Occupied': lang.dashboard.statusOccupied,
-    'Maintenance': lang.dashboard.statusMaintenance
+    'Maintenance': lang.dashboard.statusMaintenance,
+    'Cleaning': lang.dashboard.statusCleaning
   }
   return statusMap[status] || status
 }
@@ -359,6 +376,19 @@ h1 {
   }
 }
 
+.room-group {
+  margin-bottom: 30px;
+}
+
+.group-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #333;
+  margin: 0 0 15px 0;
+  padding-bottom: 10px;
+  border-bottom: 2px solid #667eea;
+}
+
 .rooms-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
@@ -417,6 +447,17 @@ h1 {
 .room-card.maintenance:hover {
   background: #fecaca;
   border-color: #f87171;
+}
+
+.room-card.cleaning {
+  background: #fef3c7;
+  border: 2px solid #fcd34d;
+  color: #92400e;
+}
+
+.room-card.cleaning:hover {
+  background: #fef08a;
+  border-color: #facc15;
 }
 
 .room-card-content {
