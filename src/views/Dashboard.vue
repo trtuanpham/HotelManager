@@ -1,26 +1,26 @@
 <template>
   <div class="dashboard">
     <h1>{{ lang.dashboard.title }}</h1>
-    
+
     <div class="stats-grid">
       <div class="stat-card">
         <h3>{{ lang.dashboard.totalRooms }}</h3>
         <p class="stat-number">{{ store.rooms.length }}</p>
         <span class="stat-label">{{ lang.dashboard.rooms }}</span>
       </div>
-      
+
       <div class="stat-card">
         <h3>{{ lang.dashboard.availableRooms }}</h3>
         <p class="stat-number">{{ availableRooms }}</p>
         <span class="stat-label">{{ lang.dashboard.available }}</span>
       </div>
-      
+
       <div class="stat-card">
         <h3>{{ lang.dashboard.occupiedRooms }}</h3>
         <p class="stat-number">{{ occupiedRooms }}</p>
         <span class="stat-label">{{ lang.dashboard.occupied }}</span>
       </div>
-      
+
       <div class="stat-card">
         <h3>{{ lang.dashboard.totalGuests }}</h3>
         <p class="stat-number">{{ store.guests.length }}</p>
@@ -28,28 +28,7 @@
       </div>
     </div>
 
-    <div class="dashboard-section full">
-      <h2>{{ lang.dashboard.roomStatusManagement }}</h2>
-      <template v-for="(rooms, group) in roomsByGroup" :key="group">
-        <div class="room-group">
-          <h3 class="group-title">{{ lang.dashboard.group || 'Group' }} {{ group }}</h3>
-          <div class="rooms-grid">
-            <div 
-              v-for="room in rooms" 
-              :key="room.id"
-              :class="['room-card', room.status.toLowerCase()]"
-            >
-              <div class="room-card-content">
-                <div class="room-number">{{ room.number }}</div>
-                <div class="room-type">{{ room.type }}</div>
-                <div class="room-status-text">{{ getRoomStatusLabel(room.status) }}</div>
-                <div v-if="room.guest" class="room-guest">{{ room.guest }}</div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </template>
-    </div>
+    <RoomStatusGrid />
 
     <!-- <div class="dashboard-grid">
       <div class="dashboard-section">
@@ -97,11 +76,13 @@
         <tbody>
           <tr v-for="booking in upcomingBookings" :key="booking.id">
             <td>{{ booking.guestName }}</td>
-            <td>{{ booking.roomNumber || '-' }}</td>
+            <td>{{ booking.roomNumber || "-" }}</td>
             <td>{{ formatDate(booking.checkIn) }}</td>
             <td>{{ formatDate(booking.checkOut) }}</td>
             <td class="price">{{ formatPrice(booking.totalPrice) }}</td>
-            <td><span :class="`status-badge ${booking.status.toLowerCase()}`">{{ booking.status }}</span></td>
+            <td>
+              <span :class="`status-badge ${booking.status.toLowerCase()}`">{{ booking.status }}</span>
+            </td>
           </tr>
         </tbody>
       </table>
@@ -110,63 +91,34 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
-import { hotelStore as store } from '../stores/hotelStore'
-import { langVN as lang } from '../locales/vi'
+import { computed } from "vue";
+import { hotelStore as store } from "../stores/hotelStore";
+import { langVN as lang } from "../locales/vi";
+import RoomStatusGrid from "../components/RoomStatusGrid.vue";
+import { getUpcomingBookings } from "../services/bookingService";
 
-const availableRooms = computed(() => 
-  store.rooms.filter(r => r.status === 'Available').length
-)
+const availableRooms = computed(() => store.rooms.filter((r) => r.status === "Available").length);
 
-const occupiedRooms = computed(() =>
-  store.rooms.filter(r => r.status === 'Occupied').length
-)
+const occupiedRooms = computed(() => store.rooms.filter((r) => r.status === "Occupied").length);
 
-const maintenanceRooms = computed(() =>
-  store.rooms.filter(r => r.status === 'Maintenance').length
-)
+const maintenanceRooms = computed(() => store.rooms.filter((r) => r.status === "Maintenance").length);
 
-const recentGuests = computed(() =>
-  store.guests.slice(0, 5)
-)
+const recentGuests = computed(() => store.guests.slice(0, 5));
 
-const upcomingBookings = computed(() =>
-  store.bookings.slice(0, 5)
-)
-
-const roomsByGroup = computed(() => {
-  const grouped = {}
-  store.rooms.forEach(room => {
-    if (!grouped[room.group]) {
-      grouped[room.group] = []
-    }
-    grouped[room.group].push(room)
-  })
-  return grouped
-})
+const upcomingBookings = computed(() => getUpcomingBookings());
 
 const formatDate = (date) => {
-  return new Date(date).toLocaleDateString('vi-VN')
-}
+  return new Date(date).toLocaleDateString("vi-VN");
+};
 
 const formatPrice = (price) => {
-  return new Intl.NumberFormat('vi-VN', {
-    style: 'currency',
-    currency: 'VND',
+  return new Intl.NumberFormat("vi-VN", {
+    style: "currency",
+    currency: "VND",
     minimumFractionDigits: 0,
-    maximumFractionDigits: 0
-  }).format(price)
-}
-
-const getRoomStatusLabel = (status) => {
-  const statusMap = {
-    'Available': lang.dashboard.statusAvailable,
-    'Occupied': lang.dashboard.statusOccupied,
-    'Maintenance': lang.dashboard.statusMaintenance,
-    'Cleaning': lang.dashboard.statusCleaning
-  }
-  return statusMap[status] || status
-}
+    maximumFractionDigits: 0,
+  }).format(price);
+};
 </script>
 
 <style scoped>
@@ -374,125 +326,5 @@ h1 {
   .dashboard-grid {
     grid-column: 1 / -1;
   }
-}
-
-.room-group {
-  margin-bottom: 30px;
-}
-
-.group-title {
-  font-size: 18px;
-  font-weight: 600;
-  color: #333;
-  margin: 0 0 15px 0;
-  padding-bottom: 10px;
-  border-bottom: 2px solid #667eea;
-}
-
-.rooms-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-  gap: 15px;
-  margin-top: 15px;
-}
-
-.room-card {
-  padding: 20px;
-  border-radius: 12px;
-  text-align: center;
-  font-weight: 600;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  transition: all 0.3s ease;
-  cursor: pointer;
-  min-height: 140px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: 15px;
-}
-
-.room-card:hover {
-  transform: translateY(-8px);
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
-}
-
-.room-card.available {
-  background: #ffffff;
-  border: 2px solid #d1d5db;
-  color: #6b7280;
-}
-
-.room-card.available:hover {
-  background: #f9fafb;
-  border-color: #9ca3af;
-}
-
-.room-card.occupied {
-  background: #dcfce7;
-  border: 2px solid #86efac;
-  color: #15803d;
-}
-
-.room-card.occupied:hover {
-  background: #bbf7d0;
-  border-color: #4ade80;
-}
-
-.room-card.maintenance {
-  background: #fee2e2;
-  border: 2px solid #fca5a5;
-  color: #991b1b;
-}
-
-.room-card.maintenance:hover {
-  background: #fecaca;
-  border-color: #f87171;
-}
-
-.room-card.cleaning {
-  background: #fef3c7;
-  border: 2px solid #fcd34d;
-  color: #92400e;
-}
-
-.room-card.cleaning:hover {
-  background: #fef08a;
-  border-color: #facc15;
-}
-
-.room-card-content {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  width: 100%;
-}
-
-.room-number {
-  font-size: 28px;
-  font-weight: bold;
-  line-height: 1;
-}
-
-.room-type {
-  font-size: 13px;
-  opacity: 0.8;
-  font-weight: 500;
-}
-
-.room-status-text {
-  font-size: 12px;
-  opacity: 0.7;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.room-guest {
-  font-size: 11px;
-  opacity: 0.75;
-  font-style: italic;
-  margin-top: 4px;
-  border-top: 1px solid currentColor;
-  padding-top: 4px;
-  opacity: 0.8;
 }
 </style>

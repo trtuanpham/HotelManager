@@ -13,6 +13,24 @@ export const langVN = {
     services: "🎯 Quản lý dịch vụ",
   },
 
+  createBooking: {
+    title: "Thêm đặt phòng mới",
+    roomType: "Loại phòng",
+    bookingType: "Loại đặt phòng",
+    checkIn: "Thời gian nhận",
+    checkOut: "Thời gian trả",
+    hourly: "Theo giờ",
+    daily: "Theo ngày",
+    hourlyPrice: "Giá theo giờ",
+    dailyPrice: "Giá theo ngày",
+    roomInfo: "Thông tin phòng",
+    createButton: "Book phòng",
+    totalPrice: "Tổng giá",
+    pricePerUnit: "Đơn giá",
+    quickHour: "{hour} giờ",
+    quickDay: "{day} ngày",
+  },
+
   // Dashboard
   dashboard: {
     title: "📊 Dashboard",
@@ -138,6 +156,15 @@ export const langVN = {
     deleteConfirm: "Bạn chắc chắn muốn xóa dịch vụ này?",
     editServiceTitle: "Chỉnh sửa dịch vụ",
     update: "Cập nhật",
+  },
+
+  // Confirm Dialog
+  confirmDialog: {
+    title: "Xác nhận",
+    cancel: "Hủy",
+    confirm: "Xác nhận",
+    roomCleaningConfirm: "Phòng {roomNumber} đã được dọn xong chưa?",
+    confirmDone: "Đã xong",
   },
 };
 

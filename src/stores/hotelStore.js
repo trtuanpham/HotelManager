@@ -3,35 +3,35 @@ import { reactive } from "vue";
 export const hotelStore = reactive({
   // Dummy data cho phòng
   rooms: [
-    { id: 1, number: "8001", type: "Single", status: "Available", price: 1500000, guest: "", group: "Tòa A" },
-    { id: 2, number: "8101", type: "Double", status: "Occupied", price: 2500000, guest: "Nguyễn Văn A", group: "Tòa A" },
-    { id: 3, number: "8201", type: "Single", status: "Available", price: 5000000, guest: "", group: "Tòa A" },
-    { id: 4, number: "8202", type: "Double", status: "Cleaning", price: 2500000, guest: "", group: "Tòa A" },
-    { id: 5, number: "8301", type: "Suite", status: "Occupied", price: 1500000, guest: "Trần Thị B", group: "Tòa A" },
-    { id: 6, number: "8302", type: "Double", status: "Available", price: 5000000, guest: "", group: "Tòa A" },
-    { id: 7, number: "8401", type: "Double", status: "Available", price: 2500000, guest: "", group: "Tòa A" },
-    { id: 8, number: "9101", type: "Single", status: "Occupied", price: 1500000, guest: "Lê Văn C", group: "Tòa B" },
-    { id: 9, number: "9201", type: "Single", status: "Available", price: 5000000, guest: "", group: "Tòa B" },
-    { id: 10, number: "9202", type: "Double", status: "Cleaning", price: 2500000, guest: "", group: "Tòa B" },
-    { id: 11, number: "9301", type: "Single", status: "Occupied", price: 1500000, guest: "Phạm Thị D", group: "Tòa B" },
-    { id: 12, number: "9302", type: "Double", status: "Available", price: 5000000, guest: "", group: "Tòa B" },
-    { id: 13, number: "9401", type: "Single", status: "Available", price: 2500000, guest: "", group: "Tòa B" },
+    { id: 1, number: "8001", type: "Single", status: "Available", priceHourly: 200000, priceDaily: 600000, guest: "", group: "Tòa A" },
+    { id: 2, number: "8101", type: "Single", status: "Occupied", priceHourly: 200000, priceDaily: 600000, guest: "Nguyễn Văn A", group: "Tòa A" },
+    { id: 3, number: "8201", type: "Single", status: "Available", priceHourly: 200000, priceDaily: 600000, guest: "", group: "Tòa A" },
+    { id: 4, number: "8202", type: "Double", status: "Cleaning", priceHourly: 300000, priceDaily: 900000, guest: "", group: "Tòa A" },
+    { id: 5, number: "8301", type: "Single", status: "Occupied", priceHourly: 200000, priceDaily: 600000, guest: "Trần Thị B", group: "Tòa A" },
+    { id: 6, number: "8302", type: "Double", status: "Available", priceHourly: 300000, priceDaily: 900000, guest: "", group: "Tòa A" },
+    { id: 7, number: "8401", type: "Double", status: "Available", priceHourly: 300000, priceDaily: 900000, guest: "", group: "Tòa A" },
+    { id: 8, number: "9101", type: "Single", status: "Occupied", priceHourly: 200000, priceDaily: 600000, guest: "Lê Văn C", group: "Tòa B" },
+    { id: 9, number: "9201", type: "Single", status: "Available", priceHourly: 200000, priceDaily: 600000, guest: "", group: "Tòa B" },
+    { id: 10, number: "9202", type: "Double", status: "Cleaning", priceHourly: 300000, priceDaily: 900000, guest: "", group: "Tòa B" },
+    { id: 11, number: "9301", type: "Single", status: "Occupied", priceHourly: 200000, priceDaily: 600000, guest: "Phạm Thị D", group: "Tòa B" },
+    { id: 12, number: "9302", type: "Double", status: "Available", priceHourly: 300000, priceDaily: 900000, guest: "", group: "Tòa B" },
+    { id: 13, number: "9401", type: "Single", status: "Available", priceHourly: 200000, priceDaily: 600000, guest: "", group: "Tòa B" },
   ],
 
   // Dummy data cho khách hàng
   guests: [
-    { id: 1, name: "Nguyễn Văn A", email: "nguyena@email.com", phone: "0901234567", room: "8001", checkIn: "2026-01-20", checkOut: "2026-01-27" },
-    { id: 2, name: "Trần Thị B", email: "tranb@email.com", phone: "0912345678", room: "8301", checkIn: "2026-01-22", checkOut: "2026-01-29" },
-    { id: 3, name: "Lê Văn C", email: "levanc@email.com", phone: "0923456789", room: "9101", checkIn: "2026-01-25", checkOut: "2026-01-30" },
-    { id: 4, name: "Phạm Thị D", email: "phamd@email.com", phone: "0934567890", room: "", checkIn: "2026-02-01", checkOut: "2026-02-05" },
+    { id: 1, name: "Nguyễn Văn A", email: "nguyena@email.com", phone: "0901234567", citizenId: "001234567890", nationality: "Việt Nam" },
+    { id: 2, name: "Trần Thị B", email: "tranb@email.com", phone: "0912345678", citizenId: "002345678901", nationality: "Việt Nam" },
+    { id: 3, name: "Lê Văn C", email: "levanc@email.com", phone: "0923456789", citizenId: "003456789012", nationality: "Trung Quốc" },
+    { id: 4, name: "Phạm Thị D", email: "phamd@email.com", phone: "0934567890", citizenId: "004567890123", nationality: "Việt Nam" },
   ],
 
   // Dummy data cho đặt phòng
   bookings: [
-    { id: 1, guestName: "Nguyễn Văn A", roomNumber: "8001", checkIn: "2026-01-20", checkOut: "2026-01-27", totalPrice: 10500000, status: "Checked In" },
-    { id: 2, guestName: "Trần Thị B", roomNumber: "8301", checkIn: "2026-01-22", checkOut: "2026-01-29", totalPrice: 10500000, status: "Checked In" },
-    { id: 3, guestName: "Lê Văn C", roomNumber: "9101", checkIn: "2026-01-25", checkOut: "2026-01-30", totalPrice: 12500000, status: "Checked In" },
-    { id: 4, guestName: "Phạm Thị D", roomNumber: "", checkIn: "2026-02-01", checkOut: "2026-02-05", totalPrice: 7500000, status: "Pending" },
+    { id: 1, guestId: 1, roomNumber: "8001", checkIn: "2026-01-20 12:00", checkOut: "2026-01-27 12:00", totalPrice: 10500000, status: "Checked In" },
+    { id: 2, guestId: 2, roomNumber: "8301", checkIn: "2026-01-22 12:00", checkOut: "2026-01-29 12:00", totalPrice: 10500000, status: "Checked In" },
+    { id: 3, guestId: 3, roomNumber: "9101", checkIn: "2026-01-25 12:00", checkOut: "2026-01-30 12:00", totalPrice: 12500000, status: "Checked In" },
+    { id: 4, guestId: 4, roomNumber: "", checkIn: "2026-02-01 12:00", checkOut: "2026-02-05 12:00", totalPrice: 7500000, status: "Pending" },
   ],
 
   // Dummy data cho dịch vụ
