@@ -20,10 +20,10 @@ export const hotelStore = reactive({
 
   // Dummy data cho khách hàng
   guests: [
-    { id: 1, name: "Nguyễn Văn A", email: "nguyena@email.com", phone: "0901234567", citizenId: "001234567890", nationality: "Việt Nam" },
-    { id: 2, name: "Trần Thị B", email: "tranb@email.com", phone: "0912345678", citizenId: "002345678901", nationality: "Việt Nam" },
-    { id: 3, name: "Lê Văn C", email: "levanc@email.com", phone: "0923456789", citizenId: "003456789012", nationality: "Trung Quốc" },
-    { id: 4, name: "Phạm Thị D", email: "phamd@email.com", phone: "0934567890", citizenId: "004567890123", nationality: "Việt Nam" },
+    { id: 1, name: "Nguyễn Văn A", email: "nguyena@email.com", phone: "0901234567", citizenId: "001234567890", nationality: "Việt Nam", rentalCount: 5 },
+    { id: 2, name: "Trần Thị B", email: "tranb@email.com", phone: "0912345678", citizenId: "002345678901", nationality: "Việt Nam", rentalCount: 3 },
+    { id: 3, name: "Lê Văn C", email: "levanc@email.com", phone: "0923456789", citizenId: "003456789012", nationality: "Trung Quốc", rentalCount: 2 },
+    { id: 4, name: "Phạm Thị D", email: "phamd@email.com", phone: "0934567890", citizenId: "004567890123", nationality: "Việt Nam", rentalCount: 1 },
   ],
 
   // Dummy data cho đặt phòng

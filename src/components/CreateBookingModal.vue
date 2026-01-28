@@ -37,6 +37,10 @@
           </div>
         </div>
 
+        <div v-else-if="isLoadingRoom" class="room-info-box">
+          <div class="dropdown-empty">Đang tải thông tin phòng...</div>
+        </div>
+
         <div class="form-group">
           <div class="guest-header">
             <label>{{ lang.dashboard?.guest }}<span class="required">*</span></label>
@@ -54,7 +58,8 @@
               @keydown.esc="showGuestDropdown = false"
             />
             <div v-show="showGuestDropdown" class="guest-dropdown">
-              <div v-if="filteredGuests.length === 0" class="dropdown-empty">Không tìm thấy khách hàng</div>
+              <div v-if="isSearching" class="dropdown-empty">Đang tìm kiếm...</div>
+              <div v-else-if="filteredGuests.length === 0" class="dropdown-empty">Không tìm thấy khách hàng</div>
               <div v-for="guest in filteredGuests" :key="guest.id" class="dropdown-item" @click="selectGuest(guest)">
                 <div class="dropdown-guest-info">
                   <div class="guest-name">{{ guest.name }}</div>
@@ -154,17 +159,23 @@ import { hotelStore as store } from "../stores/hotelStore";
 import { langVN as lang } from "../locales/vi";
 import { DEFAULT_CHECK_IN_HOUR, DEFAULT_CHECK_IN_MINUTE, DEFAULT_CHECK_OUT_HOUR, DEFAULT_CHECK_OUT_MINUTE, BOOKING_TYPES } from "../data/constants";
 import { getDefaultCheckInTime, getDefaultCheckOutTime, calculateBookingHours, calculateBookingDays, calculateTotalPrice } from "../services/calculatorTime";
+import { searchGuests, getTopGuests } from "../services/guestService";
+import { getRoomByNumber } from "../services/roomService";
 import CreateGuestModal from "./CreateGuestModal.vue";
 
 const isVisible = ref(false);
 const guestSearchQuery = ref("");
 const showGuestDropdown = ref(false);
+const filteredGuests = ref([]);
+const isSearching = ref(false);
 const selectedGuestName = ref("");
 const selectedGuestPhone = ref("");
 const selectedGuestCitizenId = ref("");
 const selectedGuestEmail = ref("");
 const selectedGuestNationality = ref("");
 const createGuestModalRef = ref(null);
+const selectedRoom = ref(null);
+const isLoadingRoom = ref(false);
 const formData = ref({
   roomNumber: "",
   guestId: "",
@@ -177,17 +188,27 @@ const formData = ref({
 
 const availableGuests = computed(() => store.guests);
 
-const filteredGuests = computed(() => {
-  if (!guestSearchQuery.value.trim()) {
-    return availableGuests.value;
-  }
-  const query = guestSearchQuery.value.toLowerCase();
-  return availableGuests.value.filter((guest) => guest.name.toLowerCase().includes(query) || guest.citizenId.toLowerCase().includes(query));
-});
+// Watch room number change and fetch room data
+watch(
+  () => formData.value.roomNumber,
+  async (newRoomNumber) => {
+    if (!newRoomNumber) {
+      selectedRoom.value = null;
+      return;
+    }
 
-const selectedRoom = computed(() => {
-  return store.rooms.find((r) => r.number === formData.value.roomNumber);
-});
+    isLoadingRoom.value = true;
+    try {
+      const room = await getRoomByNumber(newRoomNumber);
+      selectedRoom.value = room;
+    } catch (error) {
+      console.error("Error loading room:", error);
+      selectedRoom.value = null;
+    } finally {
+      isLoadingRoom.value = false;
+    }
+  },
+);
 
 // watch checkin and checkout to update total price
 watch([() => formData.value.checkIn, () => formData.value.checkOut], ([newCheckIn, newCheckOut]) => {
@@ -223,6 +244,38 @@ watch(
 const roomPricePerNight = computed(() => {
   const room = store.rooms.find((r) => r.number === formData.value.roomNumber);
   return room?.price || 0;
+});
+
+// Watch guest search query and call searchGuests service
+watch(guestSearchQuery, async (newQuery) => {
+  if (!showGuestDropdown.value) return;
+
+  isSearching.value = true;
+  try {
+    const results = await searchGuests(newQuery);
+    filteredGuests.value = results;
+  } catch (error) {
+    console.error("Error searching guests:", error);
+    filteredGuests.value = [];
+  } finally {
+    isSearching.value = false;
+  }
+});
+
+// Load top 10 guests when dropdown opens
+watch(showGuestDropdown, async (isOpen) => {
+  if (isOpen && filteredGuests.value.length === 0 && !guestSearchQuery.value.trim()) {
+    isSearching.value = true;
+    try {
+      const results = await searchGuests("", 10);
+      filteredGuests.value = results;
+    } catch (error) {
+      console.error("Error loading guests:", error);
+      filteredGuests.value = [];
+    } finally {
+      isSearching.value = false;
+    }
+  }
 });
 
 const numberOfNights = computed(() => {
@@ -262,12 +315,29 @@ const openModal = (roomNumber) => {
   };
   guestSearchQuery.value = "";
   showGuestDropdown.value = false;
+  filteredGuests.value = [];
   selectedGuestName.value = "";
   selectedGuestPhone.value = "";
   selectedGuestCitizenId.value = "";
   selectedGuestEmail.value = "";
   selectedGuestNationality.value = "";
   isVisible.value = true;
+
+  // Load top 10 guests by default
+  loadDefaultGuests();
+};
+
+const loadDefaultGuests = async () => {
+  isSearching.value = true;
+  try {
+    const results = await getTopGuests();
+    filteredGuests.value = results;
+  } catch (error) {
+    console.error("Error loading default guests:", error);
+    filteredGuests.value = [];
+  } finally {
+    isSearching.value = false;
+  }
 };
 
 const closeModal = () => {
@@ -283,6 +353,7 @@ const closeModal = () => {
   };
   guestSearchQuery.value = "";
   showGuestDropdown.value = false;
+  filteredGuests.value = [];
   selectedGuestName.value = "";
   selectedGuestPhone.value = "";
   selectedGuestCitizenId.value = "";
