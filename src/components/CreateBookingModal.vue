@@ -15,30 +15,26 @@
           }
         "
       >
-        <div class="form-group room-display">
-          <label
-            >{{ lang.dashboard?.room }}: <strong>{{ formData.roomNumber }}</strong></label
-          >
-        </div>
-
         <div v-if="selectedRoom" class="room-info-box">
           <h4>{{ lang.createBooking?.roomInfo }}:</h4>
-          <div class="room-info-item">
-            <span class="label">{{ lang.createBooking?.roomType }}:</span>
-            <span class="value">{{ selectedRoom.type }}</span>
+          <div class="room-info-grid">
+            <div class="room-info-item">
+              <span class="label">{{ lang.dashboard?.room }}:</span>
+              <span class="value">{{ formData.roomNumber }}</span>
+            </div>
+            <div class="room-info-item">
+              <span class="label">{{ lang.createBooking?.roomType }}:</span>
+              <span class="value">{{ selectedRoom.type }}</span>
+            </div>
+            <div class="room-info-item">
+              <span class="label">{{ lang.createBooking?.hourlyPrice }}:</span>
+              <span class="value">{{ selectedRoom.priceHourly?.toLocaleString("vi-VN") }} VND/giờ</span>
+            </div>
+            <div class="room-info-item">
+              <span class="label">{{ lang.createBooking?.dailyPrice }}:</span>
+              <span class="value">{{ selectedRoom.priceDaily?.toLocaleString("vi-VN") }} VND/đêm</span>
+            </div>
           </div>
-          <div class="room-info-item">
-            <span class="label">{{ lang.createBooking?.hourlyPrice }}:</span>
-            <span class="value">{{ selectedRoom.priceHourly?.toLocaleString("vi-VN") }} VND/giờ</span>
-          </div>
-          <div class="room-info-item">
-            <span class="label">{{ lang.createBooking?.dailyPrice }}:</span>
-            <span class="value">{{ selectedRoom.priceDaily?.toLocaleString("vi-VN") }} VND/đêm</span>
-          </div>
-        </div>
-
-        <div v-else-if="isLoadingRoom" class="room-info-box">
-          <div class="dropdown-empty">Đang tải thông tin phòng...</div>
         </div>
 
         <div class="form-group">
@@ -89,6 +85,16 @@
               <div class="info-col">
                 <small class="label">ID công dân:</small>
                 <small class="value">{{ selectedGuestCitizenId || "---" }}</small>
+              </div>
+            </div>
+            <div class="info-row">
+              <div class="info-col">
+                <small class="label">Ngày sinh:</small>
+                <small class="value">{{ selectedGuestDateOfBirth || "---" }}</small>
+              </div>
+              <div class="info-col">
+                <small class="label">Ngày thuê gần nhất:</small>
+                <small class="value">{{ selectedGuestLastRentalDate || "---" }}</small>
               </div>
             </div>
           </div>
@@ -173,6 +179,8 @@ const selectedGuestPhone = ref("");
 const selectedGuestCitizenId = ref("");
 const selectedGuestEmail = ref("");
 const selectedGuestNationality = ref("");
+const selectedGuestDateOfBirth = ref("");
+const selectedGuestLastRentalDate = ref("");
 const createGuestModalRef = ref(null);
 const selectedRoom = ref(null);
 const isLoadingRoom = ref(false);
@@ -321,6 +329,8 @@ const openModal = (roomNumber) => {
   selectedGuestCitizenId.value = "";
   selectedGuestEmail.value = "";
   selectedGuestNationality.value = "";
+  selectedGuestDateOfBirth.value = "";
+  selectedGuestLastRentalDate.value = "";
   isVisible.value = true;
 
   // Load top 10 guests by default
@@ -359,6 +369,8 @@ const closeModal = () => {
   selectedGuestCitizenId.value = "";
   selectedGuestEmail.value = "";
   selectedGuestNationality.value = "";
+  selectedGuestDateOfBirth.value = "";
+  selectedGuestLastRentalDate.value = "";
 };
 
 const selectGuest = (guest) => {
@@ -368,6 +380,8 @@ const selectGuest = (guest) => {
   selectedGuestCitizenId.value = guest.citizenId || "";
   selectedGuestEmail.value = guest.email || "";
   selectedGuestNationality.value = guest.nationality || "";
+  selectedGuestDateOfBirth.value = guest.dateOfBirth || "";
+  selectedGuestLastRentalDate.value = guest.lastRentalDate || "";
   guestSearchQuery.value = guest.name;
   showGuestDropdown.value = false;
 };
@@ -634,28 +648,34 @@ select.input-field {
   letter-spacing: 0.5px;
 }
 
-.room-info-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 10px 0;
-  font-size: 13px;
-  border-bottom: 1px solid #f3f4f6;
+.room-info-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
 }
 
-.room-info-item:last-child {
-  border-bottom: none;
-  padding-bottom: 0;
+.room-info-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px;
+  font-size: 13px;
+  border-radius: 4px;
+  background: #f9fafb;
 }
 
 .room-info-item .label {
   color: #6b7280;
-  font-weight: 500;
+  font-weight: 600;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .room-info-item .value {
   color: #667eea;
   font-weight: 600;
+  font-size: 12px;
 }
 
 .modal-footer {
