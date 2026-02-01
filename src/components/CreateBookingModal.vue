@@ -15,24 +15,24 @@
           }
         "
       >
-        <div v-if="selectedRoom" class="room-info-box">
+        <div class="room-info-box">
           <h4>{{ lang.createBooking?.roomInfo }}:</h4>
           <div class="room-info-grid">
             <div class="room-info-item">
               <span class="label">{{ lang.dashboard?.room }}:</span>
-              <span class="value">{{ formData.roomNumber }}</span>
+              <span class="value">{{ selectedRoom ? formData.roomNumber : "..." }}</span>
             </div>
             <div class="room-info-item">
               <span class="label">{{ lang.createBooking?.roomType }}:</span>
-              <span class="value">{{ selectedRoom.type }}</span>
+              <span class="value">{{ selectedRoom ? selectedRoom.type : "..." }}</span>
             </div>
             <div class="room-info-item">
               <span class="label">{{ lang.createBooking?.hourlyPrice }}:</span>
-              <span class="value">{{ selectedRoom.priceHourly?.toLocaleString("vi-VN") }} VND/giờ</span>
+              <span class="value">{{ selectedRoom ? selectedRoom.priceHourly?.toLocaleString("vi-VN") + " VND/giờ" : "..." }}</span>
             </div>
             <div class="room-info-item">
               <span class="label">{{ lang.createBooking?.dailyPrice }}:</span>
-              <span class="value">{{ selectedRoom.priceDaily?.toLocaleString("vi-VN") }} VND/đêm</span>
+              <span class="value">{{ selectedRoom ? selectedRoom.priceDaily?.toLocaleString("vi-VN") + " VND/đêm" : "..." }}</span>
             </div>
           </div>
         </div>
