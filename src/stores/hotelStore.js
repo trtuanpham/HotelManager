@@ -31,6 +31,7 @@ export const hotelStore = reactive({
       dateOfBirth: "1985-03-15",
       createdAt: "2024-01-10",
       lastRentalDate: "2026-01-27",
+      imageUrl: "",
     },
     {
       id: 2,
@@ -43,6 +44,7 @@ export const hotelStore = reactive({
       dateOfBirth: "1990-07-22",
       createdAt: "2024-02-15",
       lastRentalDate: "2026-01-29",
+      imageUrl: "",
     },
     {
       id: 3,
@@ -55,6 +57,7 @@ export const hotelStore = reactive({
       dateOfBirth: "1988-11-08",
       createdAt: "2024-03-20",
       lastRentalDate: "2026-01-30",
+      imageUrl: "",
     },
     {
       id: 4,
@@ -67,15 +70,16 @@ export const hotelStore = reactive({
       dateOfBirth: "1995-05-18",
       createdAt: "2025-01-15",
       lastRentalDate: "2026-01-15",
+      imageUrl: "",
     },
   ],
 
   // Dummy data cho đặt phòng
   bookings: [
-    { id: 1, guestId: 1, roomNumber: "8001", checkIn: "2026-01-20 12:00", checkOut: "2026-01-27 12:00", totalPrice: 10500000, status: "Checked In" },
-    { id: 2, guestId: 2, roomNumber: "8301", checkIn: "2026-01-22 12:00", checkOut: "2026-01-29 12:00", totalPrice: 10500000, status: "Checked In" },
-    { id: 3, guestId: 3, roomNumber: "9101", checkIn: "2026-01-25 12:00", checkOut: "2026-01-30 12:00", totalPrice: 12500000, status: "Checked In" },
-    { id: 4, guestId: 4, roomNumber: "", checkIn: "2026-02-01 12:00", checkOut: "2026-02-05 12:00", totalPrice: 7500000, status: "Pending" },
+    { id: 1, guestId: 1, accompaniedGuestIds: [2], roomNumber: "8001", checkIn: "2026-01-20 12:00", checkOut: "2026-01-27 12:00", totalPrice: 10500000, status: "Checked In" },
+    { id: 2, guestId: 2, accompaniedGuestIds: [], roomNumber: "8301", checkIn: "2026-01-22 12:00", checkOut: "2026-01-29 12:00", totalPrice: 10500000, status: "Checked In" },
+    { id: 3, guestId: 3, accompaniedGuestIds: [4], roomNumber: "9101", checkIn: "2026-01-25 12:00", checkOut: "2026-01-30 12:00", totalPrice: 12500000, status: "Checked In" },
+    { id: 4, guestId: 4, accompaniedGuestIds: [], roomNumber: "", checkIn: "2026-02-01 12:00", checkOut: "2026-02-05 12:00", totalPrice: 7500000, status: "Pending" },
   ],
 
   // Dummy data cho dịch vụ
@@ -145,6 +149,7 @@ export const hotelStore = reactive({
       id: Math.max(...this.bookings.map((b) => b.id), 0) + 1,
       ...booking,
       status: "Pending",
+      accompaniedGuestIds: booking.accompaniedGuestIds || [],
     };
     this.bookings.push(newBooking);
     return newBooking;

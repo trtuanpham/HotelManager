@@ -1,6 +1,6 @@
 <template>
   <CreateGuestModal ref="createGuestModalRef" />
-  <div v-if="isVisible" class="modal-overlay" @click.self="closeModal">
+  <ModalBase :is-visible="isVisible" modal-id="booking-modal">
     <div class="modal-container">
       <div class="modal-header">
         <h3>{{ lang.booking?.createNew || "Tạo đặt phòng mới" }}</h3>
@@ -50,7 +50,7 @@
               placeholder="Tìm kiếm khách hàng..."
               @input="showGuestDropdown = true"
               @focus="showGuestDropdown = true"
-              @blur="() => setTimeout(() => (showGuestDropdown = false), 200)"
+              @blur="handleGuestSearchBlur"
               @keydown.esc="showGuestDropdown = false"
             />
             <div v-show="showGuestDropdown" class="guest-dropdown">
@@ -67,34 +67,39 @@
           </div>
 
           <div v-if="selectedGuestName" class="guest-info-details">
-            <div class="info-row">
-              <div class="info-col">
-                <small class="label">Email:</small>
-                <small class="value">{{ selectedGuestEmail || "---" }}</small>
-              </div>
-              <div class="info-col">
-                <small class="label">Quốc tịch:</small>
-                <small class="value">{{ selectedGuestNationality || "---" }}</small>
-              </div>
+            <div class="guest-avatar-display">
+              <img :src="guestAvatarUrl" alt="Guest Avatar" class="guest-avatar-img" />
             </div>
-            <div class="info-row">
-              <div class="info-col">
-                <small class="label">Số điện thoại:</small>
-                <small class="value">{{ selectedGuestPhone || "---" }}</small>
+            <div class="guest-info-section">
+              <div class="info-row">
+                <div class="info-col">
+                  <small class="label">Email:</small>
+                  <small class="value">{{ selectedGuestEmail || "---" }}</small>
+                </div>
+                <div class="info-col">
+                  <small class="label">Quốc tịch:</small>
+                  <small class="value">{{ selectedGuestNationality || "---" }}</small>
+                </div>
               </div>
-              <div class="info-col">
-                <small class="label">ID công dân:</small>
-                <small class="value">{{ selectedGuestCitizenId || "---" }}</small>
+              <div class="info-row">
+                <div class="info-col">
+                  <small class="label">Số điện thoại:</small>
+                  <small class="value">{{ selectedGuestPhone || "---" }}</small>
+                </div>
+                <div class="info-col">
+                  <small class="label">ID công dân:</small>
+                  <small class="value">{{ selectedGuestCitizenId || "---" }}</small>
+                </div>
               </div>
-            </div>
-            <div class="info-row">
-              <div class="info-col">
-                <small class="label">Ngày sinh:</small>
-                <small class="value">{{ selectedGuestDateOfBirth || "---" }}</small>
-              </div>
-              <div class="info-col">
-                <small class="label">Ngày thuê gần nhất:</small>
-                <small class="value">{{ selectedGuestLastRentalDate || "---" }}</small>
+              <div class="info-row">
+                <div class="info-col">
+                  <small class="label">Ngày sinh:</small>
+                  <small class="value">{{ selectedGuestDateOfBirth || "---" }}</small>
+                </div>
+                <div class="info-col">
+                  <small class="label">Ngày thuê gần nhất:</small>
+                  <small class="value">{{ selectedGuestLastRentalDate || "---" }}</small>
+                </div>
               </div>
             </div>
           </div>
@@ -156,17 +161,18 @@
         <button class="btn btn-primary" @click="submitBooking">{{ lang.createBooking?.createButton }}</button>
       </div>
     </div>
-  </div>
+  </ModalBase>
 </template>
 
 <script setup>
 import { ref, computed, watch } from "vue";
 import { hotelStore as store } from "../stores/hotelStore";
 import { langVN as lang } from "../locales/vi";
-import { DEFAULT_CHECK_IN_HOUR, DEFAULT_CHECK_IN_MINUTE, DEFAULT_CHECK_OUT_HOUR, DEFAULT_CHECK_OUT_MINUTE, BOOKING_TYPES } from "../data/constants";
+import { DEFAULT_CHECK_IN_HOUR, DEFAULT_CHECK_IN_MINUTE, DEFAULT_CHECK_OUT_HOUR, DEFAULT_CHECK_OUT_MINUTE, BOOKING_TYPES, DEFAULT_AVATAR_SVG } from "../data/constants";
 import { getDefaultCheckInTime, getDefaultCheckOutTime, calculateBookingHours, calculateBookingDays, calculateTotalPrice } from "../services/calculatorTime";
 import { searchGuests, getTopGuests } from "../services/guestService";
 import { getRoomByNumber } from "../services/roomService";
+import ModalBase from "./ModalBase.vue";
 import CreateGuestModal from "./CreateGuestModal.vue";
 
 const isVisible = ref(false);
@@ -181,6 +187,7 @@ const selectedGuestEmail = ref("");
 const selectedGuestNationality = ref("");
 const selectedGuestDateOfBirth = ref("");
 const selectedGuestLastRentalDate = ref("");
+const selectedGuestAvatar = ref("");
 const createGuestModalRef = ref(null);
 const selectedRoom = ref(null);
 const isLoadingRoom = ref(false);
@@ -302,6 +309,10 @@ const calculatedTotalPrice = computed(() => {
   }
 });
 
+const guestAvatarUrl = computed(() => {
+  return selectedGuestAvatar.value || DEFAULT_AVATAR_SVG;
+});
+
 const openModal = (roomNumber) => {
   const room = store.rooms.find((r) => r.number === roomNumber);
 
@@ -331,6 +342,7 @@ const openModal = (roomNumber) => {
   selectedGuestNationality.value = "";
   selectedGuestDateOfBirth.value = "";
   selectedGuestLastRentalDate.value = "";
+  selectedGuestAvatar.value = "";
   isVisible.value = true;
 
   // Load top 10 guests by default
@@ -371,6 +383,7 @@ const closeModal = () => {
   selectedGuestNationality.value = "";
   selectedGuestDateOfBirth.value = "";
   selectedGuestLastRentalDate.value = "";
+  selectedGuestAvatar.value = "";
 };
 
 const selectGuest = (guest) => {
@@ -382,6 +395,7 @@ const selectGuest = (guest) => {
   selectedGuestNationality.value = guest.nationality || "";
   selectedGuestDateOfBirth.value = guest.dateOfBirth || "";
   selectedGuestLastRentalDate.value = guest.lastRentalDate || "";
+  selectedGuestAvatar.value = guest.avatar || "";
   guestSearchQuery.value = guest.name;
   showGuestDropdown.value = false;
 };
@@ -390,6 +404,12 @@ const openCreateGuestModal = () => {
   if (createGuestModalRef.value) {
     createGuestModalRef.value.openModal(guestSearchQuery.value);
   }
+};
+
+const handleGuestSearchBlur = () => {
+  setTimeout(() => {
+    showGuestDropdown.value = false;
+  }, 200);
 };
 
 const submitBooking = () => {
@@ -476,24 +496,11 @@ defineExpose({
 </script>
 
 <style scoped>
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1001;
-}
-
 .modal-container {
   background: white;
   border-radius: 12px;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
-  max-width: 500px;
+  max-width: 550px;
   width: 90%;
   max-height: 90vh;
   overflow-y: auto;
@@ -858,13 +865,34 @@ select.input-field {
 
 .guest-info-details {
   margin-top: 8px;
-  padding: 12px;
+  padding: 15px;
   background: #f9fafb;
   border-radius: 4px;
   border: 1px solid #e5e7eb;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 15px;
+  align-items: start;
+}
+
+.guest-info-section {
   display: flex;
   flex-direction: column;
   gap: 8px;
+}
+
+.guest-avatar-display {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 8px;
+}
+
+.guest-avatar-img {
+  width: 100px;
+  height: 100px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 2px solid #e5e7eb;
 }
 
 .info-row {
@@ -893,6 +921,20 @@ select.input-field {
   font-weight: 500;
 }
 
+.guest-avatar-display {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 12px;
+}
+
+.guest-avatar-img {
+  width: 100px;
+  height: 100px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 2px solid #e5e7eb;
+}
+
 .dropdown-guest-info {
   display: flex;
   flex-direction: column;
@@ -909,5 +951,54 @@ select.input-field {
   font-size: 11px;
   color: #9ca3af;
   font-weight: 400;
+}
+
+.accompanied-guests-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+  padding: 10px;
+  background: #f3f4f6;
+  border-radius: 4px;
+  min-height: 32px;
+}
+
+.accompanied-guest-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: #667eea;
+  color: white;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.remove-guest-btn {
+  background: none;
+  border: none;
+  color: white;
+  cursor: pointer;
+  font-size: 18px;
+  padding: 0;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all 0.2s;
+  line-height: 1;
+}
+
+.remove-guest-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: scale(1.1);
+}
+
+.accompanied-guest-input {
+  margin-bottom: 8px;
 }
 </style>

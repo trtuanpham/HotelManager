@@ -1,8 +1,4 @@
 /* ===== FORM STYLES ===== */
-.form-group {
-    margin-bottom: 18px;
-}
-
 .form-row {
     display: flex;
     gap: 12px;

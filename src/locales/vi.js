@@ -92,6 +92,22 @@ export const langVN = {
   },
 
   // Guests
+  guest: {
+    createNew: "Tạo khách hàng mới",
+    image: "Hình ảnh:",
+    name: "Tên khách hàng",
+    nameRequired: "Vui lòng nhập tên khách hàng",
+    email: "Email",
+    phone: "Số điện thoại",
+    citizenId: "ID công dân",
+    nationality: "Quốc tịch",
+    create: "Thêm khách hàng",
+    dateOfBirth: "Ngày sinh",
+    rentalCount: "Số lần thuê",
+    lastRentalDate: "Ngày thuê gần nhất",
+  },
+
+  // Guests Management
   guests: {
     title: "👥 Quản lý khách hàng",
     addGuest: "+ Thêm khách",
