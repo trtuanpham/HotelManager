@@ -77,7 +77,7 @@ export const hotelStore = reactive({
   // Dummy data cho đặt phòng
   bookings: [
     {
-      id: 1,
+      id: "booking_1",
       guestId: "guest_1",
       accompaniedGuestIds: ["guest_2", "guest_3"],
       roomNumber: "8001",
@@ -90,7 +90,7 @@ export const hotelStore = reactive({
       status: "Checked In",
     },
     {
-      id: 2,
+      id: "booking_2",
       guestId: "guest_2",
       accompaniedGuestIds: [],
       roomNumber: "8301",
@@ -103,7 +103,7 @@ export const hotelStore = reactive({
       status: "Checked In",
     },
     {
-      id: 3,
+      id: "booking_3",
       guestId: "guest_3",
       accompaniedGuestIds: ["guest_4", "guest_1"],
       roomNumber: "9101",
@@ -116,7 +116,7 @@ export const hotelStore = reactive({
       status: "Checked In",
     },
     {
-      id: 4,
+      id: "booking_4",
       guestId: "guest_4",
       accompaniedGuestIds: [],
       roomNumber: "",
@@ -142,7 +142,7 @@ export const hotelStore = reactive({
   prepayments: [
     {
       id: 1,
-      bookingId: 1,
+      bookingId: "booking_1",
       amount: 5000000,
       paymentDate: "2026-01-15 10:30",
       paymentMethod: "Chuyển khoản",
@@ -151,7 +151,7 @@ export const hotelStore = reactive({
     },
     {
       id: 2,
-      bookingId: 2,
+      bookingId: "booking_2",
       amount: 3000000,
       paymentDate: "2026-01-18 14:15",
       paymentMethod: "Tiền mặt",
@@ -160,7 +160,7 @@ export const hotelStore = reactive({
     },
     {
       id: 3,
-      bookingId: 3,
+      bookingId: "booking_3",
       amount: 6000000,
       paymentDate: "2026-01-20 09:00",
       paymentMethod: "Thẻ tín dụng",
@@ -169,12 +169,87 @@ export const hotelStore = reactive({
     },
     {
       id: 4,
-      bookingId: 4,
+      bookingId: "booking_4",
       amount: 2500000,
       paymentDate: "2026-01-28 16:45",
       paymentMethod: "Chuyển khoản",
       description: "Trả tiền trước 33%",
       status: "Pending",
+    },
+  ],
+
+  // Lịch sử sự kiện đặt phòng (Timeline events)
+  bookingEvents: [
+    // Booking 1 events
+    {
+      id: 1,
+      bookingId: "booking_1",
+      type: "booking_created",
+      icon: "📋",
+      title: "Khách đặt phòng",
+      description: "Đặt phòng 8001",
+      date: "2025-12-01 06:00",
+      amount: null,
+    },
+    {
+      id: 2,
+      bookingId: "booking_1",
+      type: "payment",
+      icon: "💳",
+      title: "Khách trả tiền mặt",
+      description: "Trả tiền trước",
+      date: "2025-12-01 06:01",
+      amount: 5000000,
+    },
+    {
+      id: 3,
+      bookingId: "booking_1",
+      type: "checkin",
+      icon: "🔓",
+      title: "Khách check-in",
+      description: "Check-in phòng 8001",
+      date: "2025-12-01 06:02",
+      amount: null,
+    },
+    {
+      id: 4,
+      bookingId: "booking_1",
+      type: "service_used",
+      icon: "🍹",
+      title: "Khách dùng dịch vụ Nước ngọt",
+      description: "Chưa thanh toán",
+      date: "2025-12-01 08:00",
+      amount: 40000,
+    },
+    {
+      id: 5,
+      bookingId: "booking_1",
+      type: "checkout",
+      icon: "🔐",
+      title: "Khách check-out",
+      description: "Check-out phòng 8001",
+      date: "2025-12-02 06:00",
+      amount: null,
+    },
+    {
+      id: 6,
+      bookingId: "booking_1",
+      type: "payment",
+      icon: "💰",
+      title: "Khách thanh toán dịch vụ",
+      description: "Trả tiền dịch vụ",
+      date: "2025-12-02 06:01",
+      amount: 40000,
+    },
+    {
+      id: 7,
+      bookingId: "booking_1",
+      type: "booking_completed",
+      icon: "✅",
+      title: "Đặt phòng hoàn tất",
+      description: "Tất cả các khoản thanh toán đã xong",
+      date: "2025-12-02 06:02",
+      amount: null,
     },
   ],
 
@@ -329,5 +404,10 @@ export const hotelStore = reactive({
   // Tính tổng tiền trả trước theo bookingId
   getTotalPrepaidByBookingId(bookingId) {
     return this.prepayments.filter((p) => p.bookingId === bookingId && p.status === "Completed").reduce((sum, p) => sum + p.amount, 0);
+  },
+
+  // Lấy danh sách sự kiện đặt phòng theo bookingId
+  getBookingEventsByBookingId(bookingId) {
+    return this.bookingEvents.filter((e) => e.bookingId === bookingId).sort((a, b) => new Date(a.date) - new Date(b.date));
   },
 });

@@ -28,6 +28,9 @@
           @remove-guest="removeGuest"
         />
 
+        <!-- Booking Timeline Section -->
+        <BookingTimelineSection :booking="booking" />
+
         <!-- Status Section -->
         <div class="details-section">
           <h4 class="section-title">Trạng thái</h4>
@@ -60,6 +63,7 @@ import RoomInfoSection from "./RoomInfoSection.vue";
 import PricingSection from "./PricingSection.vue";
 import PrepaymentSection from "./PrepaymentSection.vue";
 import GuestInfoSection from "./GuestInfoSection.vue";
+import BookingTimelineSection from "./BookingTimelineSection.vue";
 
 const isVisible = ref(false);
 const booking = ref(null);
