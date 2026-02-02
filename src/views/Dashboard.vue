@@ -74,7 +74,7 @@
           </tr>
         </thead>
         <tbody>
-          <tr v-for="booking in upcomingBookings" :key="booking.id">
+          <tr v-for="booking in upcomingBookings" :key="booking.id" class="booking-row" @click="openBookingDetails(booking)">
             <td>{{ booking.guestName }}</td>
             <td>{{ booking.roomNumber || "-" }}</td>
             <td>{{ formatDate(booking.checkIn) }}</td>
@@ -87,15 +87,20 @@
         </tbody>
       </table>
     </div>
+
+    <BookingDetailsModal ref="bookingDetailsModalRef" />
   </div>
 </template>
 
 <script setup>
-import { computed } from "vue";
+import { ref, computed } from "vue";
 import { hotelStore as store } from "../stores/hotelStore";
 import { langVN as lang } from "../locales/vi";
 import RoomStatusGrid from "../components/RoomStatusGrid.vue";
+import BookingDetailsModal from "../components/BookingDetailsModal.vue";
 import { getUpcomingBookings } from "../services/bookingService";
+
+const bookingDetailsModalRef = ref(null);
 
 const availableRooms = computed(() => store.rooms.filter((r) => r.status === "Available").length);
 
@@ -118,6 +123,12 @@ const formatPrice = (price) => {
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
   }).format(price);
+};
+
+const openBookingDetails = (booking) => {
+  if (bookingDetailsModalRef.value) {
+    bookingDetailsModalRef.value.openModal(booking);
+  }
 };
 </script>
 
@@ -311,6 +322,16 @@ h1 {
 
 .data-table tbody tr:hover {
   background: #fafafa;
+}
+
+.booking-row {
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.booking-row:hover {
+  background: #eff6ff;
+  box-shadow: inset 0 0 0 1px #bfdbfe;
 }
 
 .price {

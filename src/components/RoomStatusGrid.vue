@@ -18,6 +18,7 @@
     </template>
     <ConfirmDialog ref="confirmDialog" />
     <CreateBookingModal ref="createBookingModal" />
+    <BookingDetailsModal ref="bookingDetailsModal" />
   </div>
 </template>
 
@@ -27,6 +28,7 @@ import { hotelStore as store } from "../stores/hotelStore";
 import { langVN as lang } from "../locales/vi";
 import ConfirmDialog from "./ConfirmDialog.vue";
 import CreateBookingModal from "./CreateBookingModal.vue";
+import BookingDetailsModal from "./BookingDetailsModal.vue";
 import { ROOM_STATUS } from "../data/constants";
 
 const MAP_STATUS_LABEL = {
@@ -38,6 +40,7 @@ const MAP_STATUS_LABEL = {
 
 const confirmDialog = ref(null);
 const createBookingModal = ref(null);
+const bookingDetailsModal = ref(null);
 
 const roomsByGroup = computed(() => {
   const grouped = {};
@@ -51,6 +54,7 @@ const roomsByGroup = computed(() => {
 });
 
 const handleRoomCardClick = async (room) => {
+  console.log("Room card clicked:", room);
   if (room.status === ROOM_STATUS.CLEANING) {
     const result = await confirmDialog.value.show({
       title: lang.confirmDialog.title,
@@ -63,6 +67,13 @@ const handleRoomCardClick = async (room) => {
     }
   } else if (room.status === ROOM_STATUS.AVAILABLE) {
     createBookingModal.value.openModal(room.number);
+  } else if (room.status === ROOM_STATUS.OCCUPIED) {
+    // Find the current booking for this room
+    const booking = store.bookings.find((b) => b.roomNumber === room.number);
+    console.log("Found booking for room:", booking);
+    if (booking) {
+      bookingDetailsModal.value.openModal(booking);
+    }
   }
 };
 </script>

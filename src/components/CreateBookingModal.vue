@@ -1,166 +1,154 @@
 <template>
   <CreateGuestModal ref="createGuestModalRef" />
-  <ModalBase :is-visible="isVisible" modal-id="booking-modal">
-    <div class="modal-container">
-      <div class="modal-header">
-        <h3>{{ lang.booking?.createNew || "Tạo đặt phòng mới" }}</h3>
-        <button class="close-btn" @click="closeModal">×</button>
+  <ModalBase :is-visible="isVisible" modal-id="booking-modal" title="Tạo đặt phòng mới" max-width="550px" @close="closeModal">
+    <div class="modal-body">
+      <div class="room-info-box">
+        <h4>{{ lang.createBooking?.roomInfo }}:</h4>
+        <div class="room-info-grid">
+          <div class="room-info-item">
+            <span class="label">{{ lang.dashboard?.room }}:</span>
+            <span class="value">{{ selectedRoom ? formData.roomNumber : "..." }}</span>
+          </div>
+          <div class="room-info-item">
+            <span class="label">{{ lang.createBooking?.roomType }}:</span>
+            <span class="value">{{ selectedRoom ? selectedRoom.type : "..." }}</span>
+          </div>
+          <div class="room-info-item">
+            <span class="label">{{ lang.createBooking?.hourlyPrice }}:</span>
+            <span class="value">{{ selectedRoom ? selectedRoom.priceHourly?.toLocaleString("vi-VN") + " VND/giờ" : "..." }}</span>
+          </div>
+          <div class="room-info-item">
+            <span class="label">{{ lang.createBooking?.dailyPrice }}:</span>
+            <span class="value">{{ selectedRoom ? selectedRoom.priceDaily?.toLocaleString("vi-VN") + " VND/đêm" : "..." }}</span>
+          </div>
+        </div>
       </div>
 
-      <div
-        class="modal-body"
-        @click="
-          (e) => {
-            if (!e.target.closest('.guest-search-box')) showGuestDropdown = false;
-          }
-        "
-      >
-        <div class="room-info-box">
-          <h4>{{ lang.createBooking?.roomInfo }}:</h4>
-          <div class="room-info-grid">
-            <div class="room-info-item">
-              <span class="label">{{ lang.dashboard?.room }}:</span>
-              <span class="value">{{ selectedRoom ? formData.roomNumber : "..." }}</span>
-            </div>
-            <div class="room-info-item">
-              <span class="label">{{ lang.createBooking?.roomType }}:</span>
-              <span class="value">{{ selectedRoom ? selectedRoom.type : "..." }}</span>
-            </div>
-            <div class="room-info-item">
-              <span class="label">{{ lang.createBooking?.hourlyPrice }}:</span>
-              <span class="value">{{ selectedRoom ? selectedRoom.priceHourly?.toLocaleString("vi-VN") + " VND/giờ" : "..." }}</span>
-            </div>
-            <div class="room-info-item">
-              <span class="label">{{ lang.createBooking?.dailyPrice }}:</span>
-              <span class="value">{{ selectedRoom ? selectedRoom.priceDaily?.toLocaleString("vi-VN") + " VND/đêm" : "..." }}</span>
-            </div>
-          </div>
+      <div class="form-group">
+        <div class="guest-header">
+          <label>{{ lang.dashboard?.guest }}<span class="required">*</span></label>
+          <button type="button" class="btn-new-guest" @click="openCreateGuestModal">+ Tạo mới</button>
         </div>
-
-        <div class="form-group">
-          <div class="guest-header">
-            <label>{{ lang.dashboard?.guest }}<span class="required">*</span></label>
-            <button type="button" class="btn-new-guest" @click="openCreateGuestModal">+ Tạo mới</button>
-          </div>
-          <div class="guest-search-box">
-            <input
-              v-model="guestSearchQuery"
-              type="text"
-              class="input-field"
-              placeholder="Tìm kiếm khách hàng..."
-              @input="showGuestDropdown = true"
-              @focus="showGuestDropdown = true"
-              @blur="handleGuestSearchBlur"
-              @keydown.esc="showGuestDropdown = false"
-            />
-            <div v-show="showGuestDropdown" class="guest-dropdown">
-              <div v-if="isSearching" class="dropdown-empty">Đang tìm kiếm...</div>
-              <div v-else-if="filteredGuests.length === 0" class="dropdown-empty">Không tìm thấy khách hàng</div>
-              <div v-for="guest in filteredGuests" :key="guest.id" class="dropdown-item" @click="selectGuest(guest)">
-                <div class="dropdown-guest-info">
-                  <div class="guest-name">{{ guest.name }}</div>
-                  <small class="guest-citizen-id">ID: {{ guest.citizenId }}</small>
-                </div>
-              </div>
-            </div>
-            <div v-if="selectedGuestName" class="guest-selected">✓ {{ selectedGuestName }}</div>
-          </div>
-
-          <div v-if="selectedGuestName" class="guest-info-details">
-            <div class="guest-avatar-display">
-              <img :src="guestAvatarUrl" alt="Guest Avatar" class="guest-avatar-img" />
-            </div>
-            <div class="guest-info-section">
-              <div class="info-row">
-                <div class="info-col">
-                  <small class="label">Email:</small>
-                  <small class="value">{{ selectedGuestEmail || "---" }}</small>
-                </div>
-                <div class="info-col">
-                  <small class="label">Quốc tịch:</small>
-                  <small class="value">{{ selectedGuestNationality || "---" }}</small>
-                </div>
-              </div>
-              <div class="info-row">
-                <div class="info-col">
-                  <small class="label">Số điện thoại:</small>
-                  <small class="value">{{ selectedGuestPhone || "---" }}</small>
-                </div>
-                <div class="info-col">
-                  <small class="label">ID công dân:</small>
-                  <small class="value">{{ selectedGuestCitizenId || "---" }}</small>
-                </div>
-              </div>
-              <div class="info-row">
-                <div class="info-col">
-                  <small class="label">Ngày sinh:</small>
-                  <small class="value">{{ selectedGuestDateOfBirth || "---" }}</small>
-                </div>
-                <div class="info-col">
-                  <small class="label">Ngày thuê gần nhất:</small>
-                  <small class="value">{{ selectedGuestLastRentalDate || "---" }}</small>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="form-row">
-          <div class="form-group">
-            <label>{{ lang.createBooking?.checkIn }}<span class="required">*</span></label>
-            <input :value="formatDateTimeLocal(formData.checkIn)" @input="(e) => (formData.checkIn = parseDateTime(e.target.value))" type="datetime-local" class="input-field" />
-          </div>
-
-          <div class="form-group">
-            <label>{{ lang.createBooking?.checkOut }}<span class="required">*</span></label>
-            <input :value="formatDateTimeLocal(formData.checkOut)" @input="(e) => (formData.checkOut = parseDateTime(e.target.value))" type="datetime-local" class="input-field" />
-          </div>
-        </div>
-
-        <div class="quick-duration-buttons">
-          <button @click="setQuickDuration(1, 'hour')" class="quick-btn quick-btn-hour">{{ lang.createBooking?.quickHour.replace("{hour}", "1") }}</button>
-          <button @click="setQuickDuration(2, 'hour')" class="quick-btn quick-btn-hour">{{ lang.createBooking?.quickHour.replace("{hour}", "2") }}</button>
-          <button @click="setQuickDuration(3, 'hour')" class="quick-btn quick-btn-hour">{{ lang.createBooking?.quickHour.replace("{hour}", "3") }}</button>
-          <button @click="setQuickDuration(1, 'day')" class="quick-btn quick-btn-day">{{ lang.createBooking?.quickDay.replace("{day}", "1") }}</button>
-          <button @click="setQuickDuration(2, 'day')" class="quick-btn quick-btn-day">{{ lang.createBooking?.quickDay.replace("{day}", "2") }}</button>
-          <button @click="setQuickDuration(3, 'day')" class="quick-btn quick-btn-day">{{ lang.createBooking?.quickDay.replace("{day}", "3") }}</button>
-        </div>
-
-        <div class="form-group">
-          <label>{{ lang.createBooking?.bookingType }}<span class="required">*</span></label>
-          <select v-model="formData.bookingType" class="input-field">
-            <option :value="BOOKING_TYPES.HOURLY">{{ lang.createBooking?.hourly }}</option>
-            <option :value="BOOKING_TYPES.DAILY">{{ lang.createBooking?.daily }}</option>
-          </select>
-        </div>
-
-        <div class="form-group">
-          <label>{{ lang.createBooking?.pricePerUnit }} (VND/{{ formData.bookingType === "hourly" ? "giờ" : "đêm" }})</label>
+        <div class="guest-search-box">
           <input
-            :value="formData.pricePerUnit ? formData.pricePerUnit.toLocaleString('vi-VN') : ''"
-            @input="(e) => (formData.pricePerUnit = parseInt(e.target.value.replace(/\D/g, '')) || 0)"
+            v-model="guestSearchQuery"
             type="text"
             class="input-field"
+            placeholder="Tìm kiếm khách hàng..."
+            @input="showGuestDropdown = true"
+            @focus="showGuestDropdown = true"
+            @blur="handleGuestSearchBlur"
+            @keydown.esc="showGuestDropdown = false"
           />
-          <small v-if="formData.bookingType === BOOKING_TYPES.HOURLY && numberOfHours > 0" class="price-info"
-            >{{ numberOfHours }} giờ × {{ formData.pricePerUnit?.toLocaleString("vi-VN") }} VND/giờ</small
-          >
-          <small v-else-if="formData.bookingType === BOOKING_TYPES.DAILY && numberOfNights > 0" class="price-info"
-            >{{ numberOfNights }} đêm × {{ formData.pricePerUnit?.toLocaleString("vi-VN") }} VND/đêm</small
-          >
+          <div v-show="showGuestDropdown" class="guest-dropdown">
+            <div v-if="isSearching" class="dropdown-empty">Đang tìm kiếm...</div>
+            <div v-else-if="filteredGuests.length === 0" class="dropdown-empty">Không tìm thấy khách hàng</div>
+            <div v-for="guest in filteredGuests" :key="guest.id" class="dropdown-item" @click="selectGuest(guest)">
+              <div class="dropdown-guest-info">
+                <div class="guest-name">{{ guest.name }}</div>
+                <small class="guest-citizen-id">ID: {{ guest.citizenId }}</small>
+              </div>
+            </div>
+          </div>
+          <div v-if="selectedGuestName" class="guest-selected">✓ {{ selectedGuestName }}</div>
         </div>
 
-        <div class="form-group">
-          <label>{{ lang.createBooking?.totalPrice }} (VND)</label>
-          <input :value="calculatedTotalPrice ? calculatedTotalPrice.toLocaleString('vi-VN') : ''" type="text" class="input-field" disabled />
+        <div v-if="selectedGuestName" class="guest-info-details">
+          <div class="guest-avatar-display">
+            <img :src="guestAvatarUrl" alt="Guest Avatar" class="guest-avatar-img" />
+          </div>
+          <div class="guest-info-section">
+            <div class="info-row">
+              <div class="info-col">
+                <small class="label">Email:</small>
+                <small class="value">{{ selectedGuestEmail || "---" }}</small>
+              </div>
+              <div class="info-col">
+                <small class="label">Quốc tịch:</small>
+                <small class="value">{{ selectedGuestNationality || "---" }}</small>
+              </div>
+            </div>
+            <div class="info-row">
+              <div class="info-col">
+                <small class="label">Số điện thoại:</small>
+                <small class="value">{{ selectedGuestPhone || "---" }}</small>
+              </div>
+              <div class="info-col">
+                <small class="label">ID công dân:</small>
+                <small class="value">{{ selectedGuestCitizenId || "---" }}</small>
+              </div>
+            </div>
+            <div class="info-row">
+              <div class="info-col">
+                <small class="label">Ngày sinh:</small>
+                <small class="value">{{ selectedGuestDateOfBirth || "---" }}</small>
+              </div>
+              <div class="info-col">
+                <small class="label">Ngày thuê gần nhất:</small>
+                <small class="value">{{ selectedGuestLastRentalDate || "---" }}</small>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
+      <div class="form-row">
+        <div class="form-group">
+          <label>{{ lang.createBooking?.checkIn }}<span class="required">*</span></label>
+          <input :value="formatDateTimeLocal(formData.checkIn)" @input="(e) => (formData.checkIn = parseDateTime(e.target.value))" type="datetime-local" class="input-field" />
+        </div>
+
+        <div class="form-group">
+          <label>{{ lang.createBooking?.checkOut }}<span class="required">*</span></label>
+          <input :value="formatDateTimeLocal(formData.checkOut)" @input="(e) => (formData.checkOut = parseDateTime(e.target.value))" type="datetime-local" class="input-field" />
+        </div>
+      </div>
+
+      <div class="quick-duration-buttons">
+        <button @click="setQuickDuration(1, 'hour')" class="quick-btn quick-btn-hour">{{ lang.createBooking?.quickHour.replace("{hour}", "1") }}</button>
+        <button @click="setQuickDuration(2, 'hour')" class="quick-btn quick-btn-hour">{{ lang.createBooking?.quickHour.replace("{hour}", "2") }}</button>
+        <button @click="setQuickDuration(3, 'hour')" class="quick-btn quick-btn-hour">{{ lang.createBooking?.quickHour.replace("{hour}", "3") }}</button>
+        <button @click="setQuickDuration(1, 'day')" class="quick-btn quick-btn-day">{{ lang.createBooking?.quickDay.replace("{day}", "1") }}</button>
+        <button @click="setQuickDuration(2, 'day')" class="quick-btn quick-btn-day">{{ lang.createBooking?.quickDay.replace("{day}", "2") }}</button>
+        <button @click="setQuickDuration(3, 'day')" class="quick-btn quick-btn-day">{{ lang.createBooking?.quickDay.replace("{day}", "3") }}</button>
+      </div>
+
+      <div class="form-group">
+        <label>{{ lang.createBooking?.bookingType }}<span class="required">*</span></label>
+        <select v-model="formData.bookingType" class="input-field">
+          <option :value="BOOKING_TYPES.HOURLY">{{ lang.createBooking?.hourly }}</option>
+          <option :value="BOOKING_TYPES.DAILY">{{ lang.createBooking?.daily }}</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>{{ lang.createBooking?.pricePerUnit }} (VND/{{ formData.bookingType === "hourly" ? "giờ" : "đêm" }})</label>
+        <input
+          :value="formData.pricePerUnit ? formData.pricePerUnit.toLocaleString('vi-VN') : ''"
+          @input="(e) => (formData.pricePerUnit = parseInt(e.target.value.replace(/\D/g, '')) || 0)"
+          type="text"
+          class="input-field"
+        />
+        <small v-if="formData.bookingType === BOOKING_TYPES.HOURLY && numberOfHours > 0" class="price-info"
+          >{{ numberOfHours }} giờ × {{ formData.pricePerUnit?.toLocaleString("vi-VN") }} VND/giờ</small
+        >
+        <small v-else-if="formData.bookingType === BOOKING_TYPES.DAILY && numberOfNights > 0" class="price-info"
+          >{{ numberOfNights }} đêm × {{ formData.pricePerUnit?.toLocaleString("vi-VN") }} VND/đêm</small
+        >
+      </div>
+
+      <div class="form-group">
+        <label>{{ lang.createBooking?.totalPrice }} (VND)</label>
+        <input :value="calculatedTotalPrice ? calculatedTotalPrice.toLocaleString('vi-VN') : ''" type="text" class="input-field" disabled />
+      </div>
+    </div>
+
+    <template #footer>
       <div class="modal-footer">
         <button class="btn btn-secondary" @click="closeModal">{{ lang.confirmDialog?.cancel }}</button>
         <button class="btn btn-primary" @click="submitBooking">{{ lang.createBooking?.createButton }}</button>
       </div>
-    </div>
+    </template>
   </ModalBase>
 </template>
 
@@ -496,63 +484,6 @@ defineExpose({
 </script>
 
 <style scoped>
-.modal-container {
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
-  max-width: 550px;
-  width: 90%;
-  max-height: 90vh;
-  overflow-y: auto;
-  animation: slideIn 0.3s ease;
-}
-
-@keyframes slideIn {
-  from {
-    transform: translateY(-50px);
-    opacity: 0;
-  }
-  to {
-    transform: translateY(0);
-    opacity: 1;
-  }
-}
-
-.modal-header {
-  padding: 20px;
-  border-bottom: 1px solid #e5e7eb;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.modal-header h3 {
-  margin: 0;
-  font-size: 20px;
-  color: #333;
-}
-
-.close-btn {
-  background: none;
-  border: none;
-  font-size: 28px;
-  color: #999;
-  cursor: pointer;
-  padding: 0;
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 4px;
-  transition: background 0.2s;
-}
-
-.close-btn:hover {
-  background: #f3f4f6;
-  color: #333;
-}
-
 .modal-body {
   padding: 20px;
 }
@@ -686,11 +617,12 @@ select.input-field {
 }
 
 .modal-footer {
-  padding: 20px;
+  padding: 16px 20px;
   border-top: 1px solid #e5e7eb;
   display: flex;
   gap: 12px;
   justify-content: flex-end;
+  background: white;
 }
 
 .btn {
