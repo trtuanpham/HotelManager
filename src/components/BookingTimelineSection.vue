@@ -105,10 +105,10 @@ const loadMore = async () => {
 
     if (response.events && response.events.length > 0) {
       events.value.push(...response.events);
-      
+
       // Update lastLoadedEventId to the last event ID we just loaded
       lastLoadedEventId.value = response.events[response.events.length - 1].id;
-      
+
       currentPage.value++;
 
       // Update hasMore flag from API response
