@@ -12,74 +12,10 @@
         </div>
 
         <!-- Pricing Section -->
-        <div class="details-section">
-          <h4 class="section-title">Thông tin giá</h4>
-          <div class="pricing-grid">
-            <div class="pricing-item">
-              <span class="label">Thời gian lưu trú:</span>
-              <span class="value">{{ editStayDuration }}</span>
-            </div>
-            <div class="pricing-item">
-              <span class="label">Giá trên đơn vị (VND)<span class="required">*</span></span>
-              <div class="price-value-container">
-                <div v-if="!isEditingPrice" class="price-display">
-                  <span class="value">{{ editPriceData.pricePerUnit?.toLocaleString("vi-VN") || "---" }} VND</span>
-                  <button class="edit-price-btn" @click="startEditPrice">Sửa</button>
-                </div>
-                <div v-else class="price-edit-mode">
-                  <input
-                    :value="tempPricePerUnit ? tempPricePerUnit.toLocaleString('vi-VN') : ''"
-                    @input="(e) => (tempPricePerUnit = parseInt(e.target.value.replace(/\D/g, '')) || 0)"
-                    type="text"
-                    class="input-field price-input-single"
-                    placeholder="0"
-                  />
-                  <button class="btn-save-price" @click="savePriceChanges">Lưu</button>
-                  <button class="btn-cancel-price" @click="cancelEditPrice">Hủy</button>
-                </div>
-              </div>
-            </div>
-            <div class="pricing-item">
-              <span class="label">Thành tiền:</span>
-              <span class="value total-price">{{ editCalculatedTotalPrice?.toLocaleString("vi-VN") || "---" }} VND</span>
-            </div>
-          </div>
-        </div>
+        <PricingSection :edit-time-data="editTimeData" :edit-price-data="editPriceData" :booking-type="booking.bookingType" @update:editPriceData="editPriceData = $event" />
 
         <!-- Prepayment Section -->
-        <div class="details-section">
-          <div class="prepayment-header-section">
-            <h4 class="section-title">Thông tin trả tiền trước</h4>
-            <button class="add-btn" @click="submitPrepayment">+ Thêm trả tiền</button>
-          </div>
-
-          <div class="prepayment-summary">
-            <div class="summary-item">
-              <span class="summary-label">Tổng tiền trả trước:</span>
-              <span class="summary-value">{{ totalPrepaid?.toLocaleString("vi-VN") || "0" }} VND</span>
-            </div>
-            <div class="summary-item">
-              <span class="summary-label">Còn lại:</span>
-              <span class="summary-value remaining">{{ (booking.totalPrice - totalPrepaid)?.toLocaleString("vi-VN") || "0" }} VND</span>
-            </div>
-          </div>
-
-          <div v-if="bookingPrepayments.length > 0" class="prepayment-list">
-            <div class="prepayment-list-header">Danh sách trả tiền trước</div>
-            <div class="prepayment-items">
-              <div v-for="prepayment in bookingPrepayments" :key="prepayment.id" class="prepayment-item">
-                <div class="prepayment-date">{{ formatPrepaymentDate(prepayment.paymentDate) }}</div>
-                <div class="prepayment-info">
-                  <div class="prepayment-description">{{ prepayment.description }}</div>
-                  <div class="prepayment-method">{{ prepayment.paymentMethod }}</div>
-                </div>
-                <div class="prepayment-amount">{{ prepayment.amount?.toLocaleString("vi-VN") || "0" }} VND</div>
-                <div :class="`prepayment-status status-${prepayment.status?.toLowerCase()}`">{{ prepayment.status }}</div>
-              </div>
-            </div>
-          </div>
-          <div v-else class="empty-message">Chưa có trả tiền trước</div>
-        </div>
+        <PrepaymentSection :booking="booking" :total-prepaid="totalPrepaid" :booking-prepayments="bookingPrepayments" @submit-prepayment="submitPrepayment" />
 
         <!-- Guest Info Section -->
         <div class="details-section">
@@ -169,6 +105,8 @@ import ModalBase from "./ModalBase.vue";
 import AddPrepaymentModal from "./AddPrepaymentModal.vue";
 import TimeDurationPicker from "./TimeDurationPicker.vue";
 import RoomInfoSection from "./RoomInfoSection.vue";
+import PricingSection from "./PricingSection.vue";
+import PrepaymentSection from "./PrepaymentSection.vue";
 
 const isVisible = ref(false);
 const booking = ref(null);
@@ -235,40 +173,6 @@ const stayDuration = computed(() => {
   } else {
     return `${diffHours} giờ`;
   }
-});
-
-const editStayDuration = computed(() => {
-  if (!editTimeData.value.checkIn || !editTimeData.value.checkOut) return "---";
-  const checkIn = new Date(editTimeData.value.checkIn);
-  const checkOut = new Date(editTimeData.value.checkOut);
-  const diffMs = checkOut - checkIn;
-  const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-  const diffDays = Math.floor(diffHours / 24);
-  const remainingHours = diffHours % 24;
-
-  if (diffDays > 0) {
-    return `${diffDays} ngày ${remainingHours} giờ`;
-  } else {
-    return `${diffHours} giờ`;
-  }
-});
-
-const calculateStayUnits = () => {
-  if (!editTimeData.value.checkIn || !editTimeData.value.checkOut) return 0;
-  const checkIn = new Date(editTimeData.value.checkIn);
-  const checkOut = new Date(editTimeData.value.checkOut);
-  const diffMs = checkOut - checkIn;
-
-  if (booking.value?.bookingType === "hourly") {
-    return Math.ceil(diffMs / (1000 * 60 * 60));
-  } else {
-    return Math.ceil(diffMs / (1000 * 60 * 60 * 24));
-  }
-};
-
-const editCalculatedTotalPrice = computed(() => {
-  const units = calculateStayUnits();
-  return units * (editPriceData.value.pricePerUnit || 0);
 });
 
 const openModal = (bookingData) => {
@@ -381,7 +285,6 @@ const saveTimeChanges = () => {
   booking.value.checkIn = checkInStr;
   booking.value.checkOut = checkOutStr;
   booking.value.pricePerUnit = editPriceData.value.pricePerUnit;
-  booking.value.totalPrice = editCalculatedTotalPrice.value;
 };
 
 const formatDateTimeLocal = (value) => {
@@ -427,23 +330,6 @@ const submitPrepayment = () => {
   if (addPrepaymentModal.value) {
     addPrepaymentModal.value.openModal(booking.value.id);
   }
-};
-
-const startEditPrice = () => {
-  tempPricePerUnit.value = editPriceData.value.pricePerUnit;
-  isEditingPrice.value = true;
-};
-
-const savePriceChanges = () => {
-  if (tempPricePerUnit.value >= 0) {
-    editPriceData.value.pricePerUnit = tempPricePerUnit.value;
-    isEditingPrice.value = false;
-  }
-};
-
-const cancelEditPrice = () => {
-  isEditingPrice.value = false;
-  tempPricePerUnit.value = 0;
 };
 
 const cancelAddPrepayment = () => {
@@ -745,104 +631,6 @@ defineExpose({
   margin-bottom: 0;
 }
 
-.edit-price-btn {
-  padding: 4px 10px;
-  background: #667eea;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  font-size: 11px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
-  white-space: nowrap;
-  flex-shrink: 0;
-}
-
-.edit-price-btn:hover {
-  background: #5568d3;
-  transform: translateY(-1px);
-}
-
-.price-display {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  justify-content: flex-end;
-}
-
-.price-edit-mode {
-  display: flex;
-  flex-direction: row;
-  gap: 8px;
-  align-items: center;
-  justify-content: flex-end;
-}
-
-.price-format {
-  font-size: 12px;
-  color: #667eea;
-  font-weight: 600;
-  white-space: nowrap;
-}
-
-.price-input-single {
-  flex: 1;
-  max-width: 180px;
-  padding: 8px 10px;
-  border: 1px solid #1988ff;
-  border-radius: 4px;
-  font-size: 12px;
-  box-sizing: border-box;
-  background: #ffffff;
-  color: #000000;
-  font-weight: 500;
-}
-
-.price-input-single:focus {
-  outline: none;
-  border-color: #667eea;
-  box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1);
-}
-
-.price-edit-buttons {
-  display: flex;
-  gap: 6px;
-  justify-content: flex-start;
-}
-
-.btn-save-price,
-.btn-cancel-price {
-  padding: 6px 12px;
-  border: none;
-  border-radius: 4px;
-  font-size: 11px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
-  white-space: nowrap;
-}
-
-.btn-save-price {
-  background: #10b981;
-  color: white;
-}
-
-.btn-save-price:hover {
-  background: #059669;
-  transform: translateY(-1px);
-}
-
-.btn-cancel-price {
-  background: #ef4444;
-  color: white;
-}
-
-.btn-cancel-price:hover {
-  background: #dc2626;
-  transform: translateY(-1px);
-}
-
 .status-badge {
   display: inline-block;
   padding: 6px 12px;
@@ -942,190 +730,10 @@ defineExpose({
   font-weight: 700;
 }
 
-.prepayment-summary {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 12px;
-  margin-bottom: 12px;
-}
-
-.prepayment-header-section {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 12px;
-}
-
-.add-btn {
-  padding: 6px 12px;
-  background: #10b981;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  font-size: 12px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
-  white-space: nowrap;
-}
-
-.add-btn:hover {
-  background: #059669;
-  transform: translateY(-1px);
-}
-
-.summary-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 10px 12px;
-  background: white;
-  border-radius: 6px;
-  border: 1px solid #e5e7eb;
-}
-
-.summary-label {
-  font-size: 12px;
-  color: #6b7280;
-  font-weight: 600;
-}
-
-.summary-value {
-  font-size: 14px;
-  color: #667eea;
-  font-weight: 700;
-}
-
-.summary-value.remaining {
-  color: #ef4444;
-}
-
-.prepayment-list {
-  margin-top: 12px;
-}
-
-.prepayment-list-header {
-  font-size: 12px;
-  font-weight: 600;
-  color: #667eea;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  margin-bottom: 8px;
-  padding-bottom: 8px;
-  border-bottom: 1px solid #e5e7eb;
-}
-
-.prepayment-items {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  max-height: 300px;
-  overflow-y: auto;
-}
-
-.prepayment-item {
-  display: grid;
-  grid-template-columns: 120px 1fr 120px 100px;
-  gap: 12px;
-  align-items: center;
-  padding: 12px;
-  background: white;
-  border-radius: 6px;
-  border: 1px solid #e5e7eb;
-  font-size: 12px;
-}
-
-.prepayment-date {
-  font-weight: 600;
-  color: #374151;
-}
-
-.prepayment-info {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.prepayment-description {
-  font-weight: 500;
-  color: #374151;
-}
-
-.prepayment-method {
-  font-size: 11px;
-  color: #6b7280;
-}
-
-.prepayment-amount {
-  font-weight: 700;
-  color: #667eea;
-  text-align: right;
-}
-
-.prepayment-status {
-  padding: 4px 8px;
-  border-radius: 12px;
-  font-size: 11px;
-  font-weight: 600;
-  text-align: center;
-  white-space: nowrap;
-}
-
-.prepayment-status.status-completed {
-  background: #dcfce7;
-  color: #15803d;
-}
-
-.prepayment-status.status-pending {
-  background: #fef3c7;
-  color: #92400e;
-}
-
 .info-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 12px;
-}
-
-.pricing-grid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 12px;
-}
-
-.pricing-item {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding: 12px;
-  background: white;
-  border-radius: 4px;
-  border: 1px solid #e5e7eb;
-}
-
-.pricing-item .label {
-  font-size: 12px;
-  color: #6b7280;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.pricing-item .value {
-  font-size: 13px;
-  color: #374151;
-  font-weight: 500;
-}
-
-.pricing-item .value.total-price {
-  font-size: 14px;
-  color: #667eea;
-  font-weight: 700;
-}
-
-.price-value-container {
-  flex: 1;
 }
 
 .btn {
