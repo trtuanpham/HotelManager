@@ -97,7 +97,7 @@ import { ref, computed } from "vue";
 import { hotelStore as store } from "../stores/hotelStore";
 import { langVN as lang } from "../locales/vi";
 import RoomStatusGrid from "../components/RoomStatusGrid.vue";
-import BookingDetailsModal from "../components/BookingDetailsModal.vue";
+import BookingDetailsModal from "../components/modals/BookingDetailsModal.vue";
 import { getUpcomingBookings } from "../services/bookingService";
 
 const bookingDetailsModalRef = ref(null);

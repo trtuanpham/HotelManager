@@ -43,8 +43,8 @@
 
 <script setup>
 import { computed, watch } from "vue";
-import { languageManager } from "../services/languageManager";
-import { langVN as lang } from "../locales/vi";
+import { languageManager } from "../../../services/languageManager";
+import { langVN as lang } from "../../../locales/vi";
 
 const props = defineProps({
   timeData: {

@@ -31,8 +31,8 @@
 
 <script setup>
 import { ref, computed, onMounted } from "vue";
-import { hotelStore as store } from "../stores/hotelStore";
-import { getBookingById } from "../services/bookingService";
+import { hotelStore as store } from "../../../stores/hotelStore";
+import { getBookingById } from "../../../services/bookingService";
 
 const props = defineProps({
   bookingId: {

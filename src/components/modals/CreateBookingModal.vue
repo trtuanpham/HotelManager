@@ -154,12 +154,12 @@
 
 <script setup>
 import { ref, computed, watch } from "vue";
-import { hotelStore as store } from "../stores/hotelStore";
-import { langVN as lang } from "../locales/vi";
-import { DEFAULT_CHECK_IN_HOUR, DEFAULT_CHECK_IN_MINUTE, DEFAULT_CHECK_OUT_HOUR, DEFAULT_CHECK_OUT_MINUTE, BOOKING_TYPES, DEFAULT_AVATAR_SVG } from "../data/constants";
-import { getDefaultCheckInTime, getDefaultCheckOutTime, calculateBookingHours, calculateBookingDays, calculateTotalPrice } from "../services/calculatorTime";
-import { searchGuests, getTopGuests } from "../services/guestService";
-import { getRoomByNumber } from "../services/roomService";
+import { hotelStore as store } from "../../stores/hotelStore";
+import { langVN as lang } from "../../locales/vi";
+import { DEFAULT_CHECK_IN_HOUR, DEFAULT_CHECK_IN_MINUTE, DEFAULT_CHECK_OUT_HOUR, DEFAULT_CHECK_OUT_MINUTE, BOOKING_TYPES, DEFAULT_AVATAR_SVG } from "../../data/constants";
+import { getDefaultCheckInTime, getDefaultCheckOutTime, calculateBookingHours, calculateBookingDays, calculateTotalPrice } from "../../services/calculatorTime";
+import { searchGuests, getTopGuests } from "../../services/guestService";
+import { getRoomByNumber } from "../../services/roomService";
 import ModalBase from "./ModalBase.vue";
 import CreateGuestModal from "./CreateGuestModal.vue";
 

@@ -18,7 +18,7 @@
 
 <script setup>
 import { ref } from "vue";
-import { langVN as lang } from "../locales/vi";
+import { langVN as lang } from "../../locales/vi";
 
 const isVisible = ref(false);
 const title = ref("");

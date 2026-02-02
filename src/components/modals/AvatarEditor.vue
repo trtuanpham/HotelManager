@@ -25,8 +25,8 @@
 
 <script setup>
 import { ref, defineProps, defineEmits, onMounted, onUnmounted } from "vue";
-import { langVN as lang } from "../locales/vi";
-import IconAdd from "../assets/icon-add.svg";
+import { langVN as lang } from "../../locales/vi";
+import IconAdd from "../../assets/icon-add.svg";
 
 const props = defineProps({
   avatar: {

@@ -20,13 +20,26 @@
       <div class="prepayment-list-header">Danh sách trả tiền trước</div>
       <div class="prepayment-items">
         <div v-for="prepayment in bookingPrepayments" :key="prepayment.id" class="prepayment-item">
-          <div class="prepayment-date">{{ formatPrepaymentDate(prepayment.paymentDate) }}</div>
-          <div class="prepayment-info">
-            <div class="prepayment-description">{{ prepayment.description }}</div>
-            <div class="prepayment-method">{{ prepayment.paymentMethod }}</div>
+          <div>
+            <span class="label">Ngày thanh toán:</span>
+            <div class="value">{{ formatPrepaymentDate(prepayment.paymentDate) }}</div>
           </div>
-          <div class="prepayment-amount">{{ prepayment.amount?.toLocaleString("vi-VN") || "0" }} VND</div>
-          <div :class="`prepayment-status status-${prepayment.status?.toLowerCase()}`">{{ prepayment.status }}</div>
+          <div>
+            <span class="label">Mô tả:</span>
+            <div class="value">{{ prepayment.description }}</div>
+          </div>
+          <div>
+            <span class="label">Phương thức:</span>
+            <div class="value">{{ prepayment.paymentMethod }}</div>
+          </div>
+          <div>
+            <span class="label">Số tiền:</span>
+            <div class="value amount">{{ prepayment.amount?.toLocaleString("vi-VN") || "0" }} VND</div>
+          </div>
+          <div>
+            <span class="label">Trạng thái:</span>
+            <div :class="`value status status-${prepayment.status?.toLowerCase()}`">{{ prepayment.status }}</div>
+          </div>
         </div>
       </div>
     </div>
@@ -117,8 +130,8 @@ const formatPrepaymentDate = (dateStr) => {
 
 .summary-item {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
+  flex-direction: column;
+  gap: 8px;
   padding: 10px 12px;
   background: white;
   border-radius: 6px;
@@ -126,13 +139,15 @@ const formatPrepaymentDate = (dateStr) => {
 }
 
 .summary-label {
-  font-size: 12px;
+  font-size: 11px;
   color: #6b7280;
   font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .summary-value {
-  font-size: 14px;
+  font-size: 13px;
   color: #667eea;
   font-weight: 700;
 }
@@ -166,50 +181,46 @@ const formatPrepaymentDate = (dateStr) => {
 
 .prepayment-item {
   display: grid;
-  grid-template-columns: 120px 1fr 120px 100px;
+  grid-template-columns: repeat(5, 1fr);
   gap: 12px;
-  align-items: center;
   padding: 12px;
   background: white;
   border-radius: 6px;
   border: 1px solid #e5e7eb;
-  font-size: 12px;
 }
 
-.prepayment-date {
-  font-weight: 600;
-  color: #374151;
-}
-
-.prepayment-info {
+.prepayment-item > div {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 6px;
 }
 
-.prepayment-description {
-  font-weight: 500;
-  color: #374151;
-}
-
-.prepayment-method {
+.prepayment-item .label {
   font-size: 11px;
   color: #6b7280;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
-.prepayment-amount {
+.prepayment-item .value {
+  font-size: 12px;
+  color: #374151;
+  font-weight: 500;
+}
+
+.prepayment-item .value.amount {
   font-weight: 700;
   color: #667eea;
-  text-align: right;
 }
 
-.prepayment-status {
+.prepayment-item .value.status {
   padding: 4px 8px;
   border-radius: 12px;
   font-size: 11px;
   font-weight: 600;
   text-align: center;
-  white-space: nowrap;
+  display: inline-block;
 }
 
 .prepayment-status.status-completed {

@@ -49,7 +49,7 @@
 
 <script setup>
 import { ref } from "vue";
-import { hotelStore as store } from "../stores/hotelStore";
+import { hotelStore as store } from "../../stores/hotelStore";
 import ModalBase from "./ModalBase.vue";
 
 const isVisible = ref(false);

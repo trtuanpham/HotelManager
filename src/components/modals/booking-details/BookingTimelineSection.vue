@@ -1,55 +1,52 @@
 <template>
-  <div class="details-section">
-    <h4 class="section-title">Lịch sử đặt phòng</h4>
+  <!-- Loading State -->
+  <div v-if="isLoading" class="timeline-loading">
+    <div class="loading-spinner"></div>
+    <p>Đang tải lịch sử...</p>
+  </div>
 
-    <!-- Loading State -->
-    <div v-if="isLoading" class="timeline-loading">
-      <div class="loading-spinner"></div>
-      <p>Đang tải lịch sử...</p>
-    </div>
+  <!-- Error State -->
+  <div v-else-if="error" class="timeline-error">
+    <p>⚠️ {{ error }}</p>
+  </div>
 
-    <!-- Error State -->
-    <div v-else-if="error" class="timeline-error">
-      <p>⚠️ {{ error }}</p>
-    </div>
+  <!-- Empty State -->
+  <div v-else-if="timelineEvents.length === 0" class="timeline-empty">
+    <p>Không có sự kiện nào</p>
+  </div>
 
-    <!-- Empty State -->
-    <div v-else-if="timelineEvents.length === 0" class="timeline-empty">
-      <p>Không có sự kiện nào</p>
-    </div>
-
-    <!-- Timeline -->
-    <div v-else class="timeline-container">
-      <div class="timeline">
-        <div v-for="(event, index) in paginatedEvents" :key="index" class="timeline-item">
-          <div class="timeline-marker" :class="`event-${event.type}`">
-            <span class="timeline-icon">{{ event.icon }}</span>
-          </div>
-          <div class="timeline-content">
-            <div class="timeline-time">{{ formatDate(event.date) }}</div>
-            <div class="timeline-title">{{ event.title }}</div>
-            <div v-if="event.description" class="timeline-description">{{ event.description }}</div>
-            <div v-if="event.amount" class="timeline-amount" :class="`amount-${event.amountType}`">
-              {{ formatAmount(event.amount) }}
-            </div>
+  <!-- Timeline -->
+  <div v-else class="timeline-container">
+    <div class="timeline">
+      <div v-for="(event, index) in paginatedEvents" :key="index" class="timeline-item">
+        <div class="timeline-marker" :style="getMarkerStyle(event.type)">
+          <img :src="getEventIconPath(event.type)" :alt="event.title" class="timeline-icon" />
+        </div>
+        <div class="timeline-content">
+          <div class="timeline-time">{{ formatDate(event.date) }}</div>
+          <div class="timeline-title">{{ event.title }}</div>
+          <div v-if="event.description" class="timeline-description">{{ event.description }}</div>
+          <div v-if="event.amount" class="timeline-amount" :class="`amount-${event.amountType}`">
+            {{ formatAmount(event.amount) }}
           </div>
         </div>
       </div>
+    </div>
 
-      <!-- Load More Button -->
-      <div v-if="hasMoreEvents" class="load-more-container">
-        <button @click="loadMore" class="load-more-btn" :disabled="isLoadingMore">
-          <span v-if="isLoadingMore" class="load-more-spinner"></span>
-          <span>{{ isLoadingMore ? "Đang tải..." : `Xem thêm (${currentPage}/${totalPages})` }}</span>
-        </button>
-      </div>
+    <!-- Load More Button -->
+    <div v-if="hasMoreEvents" class="load-more-container">
+      <button @click="loadMore" class="load-more-btn" :disabled="isLoadingMore">
+        <span v-if="isLoadingMore" class="load-more-spinner"></span>
+        <span>{{ isLoadingMore ? "Đang tải..." : `Xem thêm (${currentPage}/${totalPages})` }}</span>
+      </button>
     </div>
   </div>
 </template>
 
 <script setup>
 import { computed, ref, onMounted } from "vue";
-import { getBookingEventsByBookingId, getBookingEventsByBookingIdPaginated } from "../services/bookingEventService";
+import { getBookingEventsByBookingId, getBookingEventsByBookingIdPaginated } from "../../../services/bookingEventService";
+import { BOOKING_EVENT_ICONS, BOOKING_EVENT_COLORS } from "../../../data/constants";
 
 const props = defineProps({
   booking: {
@@ -166,6 +163,19 @@ const formatDate = (date) => {
 const formatAmount = (amount) => {
   return amount.toLocaleString("vi-VN") + " ₫";
 };
+
+const getEventIconPath = (type) => {
+  const iconName = BOOKING_EVENT_ICONS[type];
+  return new URL(`../assets/${iconName}`, import.meta.url).href;
+};
+
+const getMarkerStyle = (type) => {
+  const color = BOOKING_EVENT_COLORS[type] || "#667eea";
+  return {
+    background: color,
+    borderColor: color,
+  };
+};
 </script>
 
 <style scoped>
@@ -274,7 +284,6 @@ const formatAmount = (amount) => {
 .timeline-marker {
   width: 40px;
   height: 40px;
-  background: white;
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -283,51 +292,15 @@ const formatAmount = (amount) => {
   position: relative;
   z-index: 1;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  border: 3px solid #f9fafb;
-}
-
-.timeline-marker.event-booking {
-  background: #f0f4ff;
-  border-color: #667eea;
-}
-
-.timeline-marker.event-payment {
-  background: #f0fdf4;
-  border-color: #22c55e;
-}
-
-.timeline-marker.event-checkin {
-  background: #fef3c7;
-  border-color: #f59e0b;
-}
-
-.timeline-marker.event-checkout {
-  background: #fecaca;
-  border-color: #ef4444;
-}
-
-.timeline-marker.event-service {
-  background: #f3e8ff;
-  border-color: #a855f7;
-}
-
-.timeline-marker.event-booking_created {
-  background: #f0f4ff;
-  border-color: #667eea;
-}
-
-.timeline-marker.event-service_used {
-  background: #f3e8ff;
-  border-color: #a855f7;
-}
-
-.timeline-marker.event-booking_completed {
-  background: #d1fae5;
-  border-color: #059669;
+  border: 3px solid;
 }
 
 .timeline-icon {
   display: block;
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+  filter: brightness(0) invert(1);
 }
 
 .timeline-content {

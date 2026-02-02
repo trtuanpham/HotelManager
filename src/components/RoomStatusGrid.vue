@@ -26,9 +26,9 @@
 import { computed, ref } from "vue";
 import { hotelStore as store } from "../stores/hotelStore";
 import { langVN as lang } from "../locales/vi";
-import ConfirmDialog from "./ConfirmDialog.vue";
-import CreateBookingModal from "./CreateBookingModal.vue";
-import BookingDetailsModal from "./BookingDetailsModal.vue";
+import ConfirmDialog from "./modals/ConfirmDialog.vue";
+import CreateBookingModal from "./modals/CreateBookingModal.vue";
+import BookingDetailsModal from "./modals/BookingDetailsModal.vue";
 import { ROOM_STATUS } from "../data/constants";
 
 const MAP_STATUS_LABEL = {

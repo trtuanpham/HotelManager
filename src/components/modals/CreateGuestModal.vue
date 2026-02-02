@@ -51,12 +51,12 @@
 
 <script setup>
 import { ref } from "vue";
-import { hotelStore as store } from "../stores/hotelStore";
-import { langVN as lang } from "../locales/vi";
-import { NATIONALITIES } from "../data/constants";
+import { hotelStore as store } from "../../stores/hotelStore";
+import { langVN as lang } from "../../locales/vi";
+import { NATIONALITIES } from "../../data/constants";
 import ModalBase from "./ModalBase.vue";
 import AvatarEditor from "./AvatarEditor.vue";
-import "../style/common.css";
+import "../../style/common.css";
 
 const isVisible = ref(false);
 const formData = ref({

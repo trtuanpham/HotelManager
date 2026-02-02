@@ -19,7 +19,7 @@
 
 <script setup>
 import { defineProps, defineEmits, onMounted, onUnmounted, watch } from "vue";
-import { useModalZIndex } from "../composables/useModalZIndex";
+import { useModalZIndex } from "../../composables/useModalZIndex";
 
 const props = defineProps({
   isVisible: {

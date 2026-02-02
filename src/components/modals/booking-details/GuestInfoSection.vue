@@ -57,7 +57,7 @@
 
 <script setup>
 import { ref } from "vue";
-import { DEFAULT_AVATAR_SVG } from "../data/constants";
+import { DEFAULT_AVATAR_SVG } from "../../../data/constants";
 
 const props = defineProps({
   mainGuest: {
