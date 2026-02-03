@@ -63,7 +63,7 @@
 import { ref, computed } from "vue";
 import { hotelStore as store } from "../../stores/hotelStore";
 import { languageController as lang } from "../../controller/languageController";
-import { DEFAULT_AVATAR_SVG, BOOKING_TYPES } from "../../data/constants";
+import { BOOKING_TYPES } from "../../data/constants";
 import { getBookingById, updateBooking } from "../../services/bookingService";
 import ModalBase from "./ModalBase.vue";
 import AddPrepaymentModal from "./AddPrepaymentModal.vue";
@@ -87,32 +87,6 @@ const changedData = ref({
 });
 
 const addPrepaymentModal = ref(null);
-
-const mainGuest = computed(() => {
-  if (!booking.value) return null;
-  const mainGuestId = booking.value.guestIds?.[0];
-  return store.guests.find((g) => g.id === mainGuestId);
-});
-
-const mainGuestName = computed(() => mainGuest.value?.name || "---");
-
-const mainGuestAvatarUrl = computed(() => {
-  return mainGuest.value?.imageUrl || DEFAULT_AVATAR_SVG;
-});
-
-const accompaniedGuests = computed(() => {
-  if (!booking.value || !booking.value.guestIds || booking.value.guestIds.length <= 1) return [];
-  const mainGuestId = booking.value.guestIds[0];
-  return booking.value.guestIds
-    .slice(1)
-    .map((guestId) => store.guests.find((g) => g.id === guestId))
-    .filter((guest) => guest !== undefined);
-});
-
-const availableGuests = computed(() => {
-  if (!booking.value) return store.guests;
-  return store.guests.filter((g) => !booking.value.guestIds.includes(g.id));
-});
 
 const hasChanges = computed(() => {
   if (changedData.value.checkIn) return true;
