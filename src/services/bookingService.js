@@ -106,3 +106,33 @@ export const getPrepaymentsByBookingId = async (bookingId) => {
     }, 3000); // Simulate 300ms network delay
   });
 };
+
+/**
+ * Update booking data (simulated API call)
+ * @param {string} bookingId - The booking ID
+ * @param {Object} updates - Updated booking data
+ * @returns {Promise<Object>} Updated booking or error
+ */
+export const updateBooking = async (bookingId, updates) => {
+  // Simulated API call - replace with real API later
+  return new Promise((resolve, reject) => {
+    setTimeout(() => {
+      try {
+        const booking = hotelStore.bookings.find((b) => b.id === bookingId);
+        if (!booking) {
+          throw new Error("Booking not found");
+        }
+
+        // Update booking data
+        Object.assign(booking, updates);
+
+        // Update in store
+        hotelStore.updateBooking(bookingId, updates);
+
+        resolve(booking);
+      } catch (error) {
+        reject(error);
+      }
+    }, 1000); // Simulate 1s network delay
+  });
+};

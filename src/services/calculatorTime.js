@@ -20,15 +20,36 @@ export const calculateBookingHours = (checkIn, checkOut) => {
 
 /**
  * Calculate number of days (nights) between check-in and check-out
+ * Rule: If check-out time is after 13:00 (1 PM), count as 1 additional day
  * @param {Date} checkIn - Check-in date
  * @param {Date} checkOut - Check-out date
- * @returns {number} Number of days (full 24-hour periods)
+ * @returns {number} Number of days (full 24-hour periods + partial days after 13:00)
  */
 export const calculateBookingDays = (checkIn, checkOut) => {
   if (!checkIn || !checkOut) return 0;
   const timeDiff = checkOut - checkIn;
-  const days = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
-  return days > 1 ? days : 1;
+
+  // Calculate full 24-hour periods
+  const fullDays = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
+
+  // Get remaining time after full days
+  const remainingMs = timeDiff % (1000 * 60 * 60 * 24);
+
+  // Get checkout hour
+  const checkOutHour = checkOut.getHours();
+
+  // If there's remaining time and checkout is after 13:00, add 1 day
+  if (remainingMs > 0 && checkOutHour >= 13) {
+    return fullDays + 1;
+  }
+
+  // If there's remaining time but checkout is before 13:00, just return full days
+  if (remainingMs > 0) {
+    return fullDays;
+  }
+
+  // If no remaining time (exactly N full days), return those days, minimum 1
+  return fullDays > 0 ? fullDays : 1;
 };
 
 /**

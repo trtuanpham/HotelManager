@@ -13,22 +13,22 @@
     </div>
 
     <div class="quick-duration-buttons">
-      <button @click="setQuickDuration(1, 'hour')" class="quick-btn quick-btn-hour">
+      <button @click="setQuickDuration(1, BOOKING_TYPES.HOURLY)" class="quick-btn quick-btn-hour">
         {{ lang.get("booking.quickHour").replace("{hour}", "1") }}
       </button>
-      <button @click="setQuickDuration(2, 'hour')" class="quick-btn quick-btn-hour">
+      <button @click="setQuickDuration(2, BOOKING_TYPES.HOURLY)" class="quick-btn quick-btn-hour">
         {{ lang.get("booking.quickHour").replace("{hour}", "2") }}
       </button>
-      <button @click="setQuickDuration(3, 'hour')" class="quick-btn quick-btn-hour">
+      <button @click="setQuickDuration(3, BOOKING_TYPES.HOURLY)" class="quick-btn quick-btn-hour">
         {{ lang.get("booking.quickHour").replace("{hour}", "3") }}
       </button>
-      <button @click="setQuickDuration(1, 'day')" class="quick-btn quick-btn-day">
+      <button @click="setQuickDuration(1, BOOKING_TYPES.DAILY)" class="quick-btn quick-btn-day">
         {{ lang.get("booking.quickDay").replace("{day}", "1") }}
       </button>
-      <button @click="setQuickDuration(2, 'day')" class="quick-btn quick-btn-day">
+      <button @click="setQuickDuration(2, BOOKING_TYPES.DAILY)" class="quick-btn quick-btn-day">
         {{ lang.get("booking.quickDay").replace("{day}", "2") }}
       </button>
-      <button @click="setQuickDuration(3, 'day')" class="quick-btn quick-btn-day">
+      <button @click="setQuickDuration(3, BOOKING_TYPES.DAILY)" class="quick-btn quick-btn-day">
         {{ lang.get("booking.quickDay").replace("{day}", "3") }}
       </button>
     </div>
@@ -43,6 +43,8 @@
 
 <script setup>
 import { languageController as lang } from "../../../controller/languageController";
+import { BOOKING_TYPES } from "../../../data/constants";
+import { calculateBookingHours, calculateBookingDays } from "../../../services/calculatorTime";
 
 const props = defineProps({
   checkIn: {
@@ -64,9 +66,8 @@ const emit = defineEmits(["update:time"]);
 const calculateDurations = (checkInDate, checkOutDate) => {
   if (!checkInDate || !checkOutDate) return { totalHour: 0, totalDay: 0 };
 
-  const diffMs = checkOutDate - checkInDate;
-  const totalHour = Math.ceil(diffMs / (1000 * 60 * 60));
-  const totalDay = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+  const totalHour = calculateBookingHours(checkInDate, checkOutDate);
+  const totalDay = calculateBookingDays(checkInDate, checkOutDate);
 
   return { totalHour, totalDay };
 };
@@ -76,6 +77,7 @@ const updateCheckIn = (value) => {
   emit("update:time", {
     checkIn: value,
     checkOut: props.checkOut,
+    bookingType: props.bookingType,
     ...durations,
   });
 };
@@ -85,6 +87,7 @@ const updateCheckOut = (value) => {
   emit("update:time", {
     checkIn: props.checkIn,
     checkOut: value,
+    bookingType: props.bookingType,
     ...durations,
   });
 };
@@ -94,16 +97,19 @@ const setQuickDuration = (value, unit) => {
 
   const checkOutDate = new Date(props.checkIn);
 
-  if (unit === "hour") {
+  if (unit === BOOKING_TYPES.HOURLY) {
     checkOutDate.setHours(checkOutDate.getHours() + value);
-  } else if (unit === "day") {
+    props.bookingType = BOOKING_TYPES.HOURLY;
+  } else if (unit === BOOKING_TYPES.DAILY) {
     checkOutDate.setDate(checkOutDate.getDate() + value);
+    props.bookingType = BOOKING_TYPES.DAILY;
   }
 
   const durations = calculateDurations(props.checkIn, checkOutDate);
   emit("update:time", {
     checkIn: props.checkIn,
     checkOut: checkOutDate,
+    bookingType: props.bookingType,
     ...durations,
   });
 };

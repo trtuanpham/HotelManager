@@ -4,7 +4,7 @@
     <div class="pricing-grid">
       <div class="pricing-item">
         <span class="label">{{ lang.get("booking.stayDuration") }}:</span>
-        <span class="value">{{ editStayDuration }}</span>
+        <span class="value">{{ stayDurationDisplay }}</span>
       </div>
       <div class="pricing-item">
         <span class="label">{{ lang.get("booking.pricePerUnit") }}<span class="required">*</span></span>
@@ -37,6 +37,7 @@
 <script setup>
 import { ref, computed, watch } from "vue";
 import { languageController as lang } from "../../../controller/languageController";
+import { BOOKING_TYPES } from "../../../data/constants";
 
 const props = defineProps({
   booking: {
@@ -50,52 +51,39 @@ const emit = defineEmits(["update:pricePerUnit"]);
 const isEditingPrice = ref(false);
 const tempPricePerUnit = ref(0);
 
-const editTimeData = computed(() => ({
-  checkIn: new Date(props.booking.checkIn),
-  checkOut: new Date(props.booking.checkOut),
-}));
-
 const editPriceData = computed(() => ({
   pricePerUnit: props.booking.pricePerUnit || 0,
 }));
 
-const bookingType = computed(() => props.booking.bookingType || "hourly");
-
-const editStayDuration = computed(() => {
-  const checkIn = editTimeData.value.checkIn;
-  const checkOut = editTimeData.value.checkOut;
-  if (!checkIn || !checkOut) return "---";
-
-  const diffMs = checkOut - checkIn;
-  const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-  const diffDays = Math.floor(diffHours / 24);
-  const remainingHours = diffHours % 24;
-
-  if (diffDays > 0) {
-    return `${diffDays} ${lang.get("common.day")} ${remainingHours} ${lang.get("common.hour")}`;
+const getTotalStayUnits = () => {
+  if (props.booking.bookingType === BOOKING_TYPES.HOURLY) {
+    return props.booking.totalHourDuration || 0;
   } else {
-    return `${diffHours} ${lang.get("common.hour")}`;
-  }
-});
-
-const calculateStayUnits = () => {
-  const checkIn = editTimeData.value.checkIn;
-  const checkOut = editTimeData.value.checkOut;
-  if (!checkIn || !checkOut) return 0;
-
-  const diffMs = checkOut - checkIn;
-
-  if (bookingType.value === "hourly") {
-    return Math.ceil(diffMs / (1000 * 60 * 60));
-  } else {
-    return Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+    return props.booking.totalDayDuration || 0;
   }
 };
 
+const stayDurationDisplay = computed(() => {
+  if (props.booking.bookingType === BOOKING_TYPES.HOURLY) {
+    const hours = props.booking.totalHourDuration || 0;
+    return `${hours} ${lang.get("common.hour")}`;
+  } else {
+    const days = props.booking.totalDayDuration || 0;
+    return `${days} ${lang.get("common.day")}`;
+  }
+});
+
 const editCalculatedTotalPrice = computed(() => {
-  const units = calculateStayUnits();
+  const units = getTotalStayUnits();
   return units * (editPriceData.value.pricePerUnit || 0);
 });
+
+const updateBookingTotalPrice = () => {
+  const units = getTotalStayUnits();
+  console.log("Calculating total price:", units, "units at", props.booking.pricePerUnit, "per unit");
+  const totalPrice = units * props.booking.pricePerUnit;
+  props.booking.totalPrice = totalPrice;
+};
 
 const startEditPrice = () => {
   tempPricePerUnit.value = editPriceData.value.pricePerUnit;
@@ -104,6 +92,8 @@ const startEditPrice = () => {
 
 const savePriceChanges = () => {
   if (tempPricePerUnit.value >= 0) {
+    // Update booking data directly
+    props.booking.pricePerUnit = tempPricePerUnit.value;
     emit("update:pricePerUnit", tempPricePerUnit.value);
     isEditingPrice.value = false;
   }
@@ -120,6 +110,10 @@ watch(
   () => {
     isEditingPrice.value = false;
     tempPricePerUnit.value = 0;
+
+    console.log("Booking changed, resetting edit state");
+    // Update total price when booking changes
+    updateBookingTotalPrice();
   },
   { deep: true },
 );

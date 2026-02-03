@@ -20,11 +20,11 @@
         <!-- Check-in/Check-out Section -->
         <div class="details-section">
           <h4 class="section-title">{{ lang.get("booking.stayDuration") }}</h4>
-          <TimeDurationPicker :check-in="editTimeData.checkIn" :check-out="editTimeData.checkOut" :booking-type="booking.bookingType" @update:time="handleTimeUpdate" />
+          <TimeDurationPicker :check-in="new Date(booking.checkIn)" :check-out="new Date(booking.checkOut)" :booking-type="booking.bookingType" @update:time="handleTimeUpdate" />
         </div>
 
         <!-- Pricing Section -->
-        <PricingSection :booking="booking" @update:pricePerUnit="editPriceData.pricePerUnit = $event" />
+        <PricingSection :booking="booking" @update:pricePerUnit="handlePriceUpdate" />
 
         <!-- Prepayment Section -->
         <PrepaymentSection :booking="booking" @submit-prepayment="submitPrepayment" />
@@ -71,8 +71,8 @@
 import { ref, computed } from "vue";
 import { hotelStore as store } from "../../stores/hotelStore";
 import { languageController as lang } from "../../controller/languageController";
-import { DEFAULT_AVATAR_SVG } from "../../data/constants";
-import { getBookingById } from "../../services/bookingService";
+import { DEFAULT_AVATAR_SVG, BOOKING_TYPES } from "../../data/constants";
+import { getBookingById, updateBooking } from "../../services/bookingService";
 import ModalBase from "./ModalBase.vue";
 import AddPrepaymentModal from "./AddPrepaymentModal.vue";
 import TimeDurationPicker from "./booking-details/TimeDurationPicker.vue";
@@ -86,14 +86,14 @@ const isVisible = ref(false);
 const isLoading = ref(false);
 const error = ref(null);
 const booking = ref(null);
-const originalBooking = ref(null);
-const editTimeData = ref({
-  checkIn: null,
-  checkOut: null,
+
+const changedData = ref({
+  checkIn: false, //
+  checkOut: false,
+  totalDuration: false,
+  pricePerUnit: false,
 });
-const editPriceData = ref({
-  pricePerUnit: 0,
-});
+
 const addPrepaymentModal = ref(null);
 
 const mainGuest = computed(() => {
@@ -123,11 +123,11 @@ const availableGuests = computed(() => {
 });
 
 const hasChanges = computed(() => {
-  if (!booking.value || !originalBooking.value) return false;
-  const checkInChanged = editTimeData.value.checkIn.toISOString() !== originalBooking.value.checkIn;
-  const checkOutChanged = editTimeData.value.checkOut.toISOString() !== originalBooking.value.checkOut;
-  const priceChanged = editPriceData.value.pricePerUnit !== originalBooking.value.pricePerUnit;
-  return checkInChanged || checkOutChanged || priceChanged;
+  if (changedData.value.checkIn) return true;
+  if (changedData.value.checkOut) return true;
+  if (changedData.value.pricePerUnit) return true;
+  if (changedData.value.totalDuration) return true;
+  return false;
 });
 
 const openModal = async (bookingId) => {
@@ -142,14 +142,6 @@ const openModal = async (bookingId) => {
     }
 
     booking.value = bookingData;
-    originalBooking.value = { ...bookingData };
-    editTimeData.value = {
-      checkIn: new Date(bookingData.checkIn),
-      checkOut: new Date(bookingData.checkOut),
-    };
-    editPriceData.value = {
-      pricePerUnit: bookingData.pricePerUnit || 0,
-    };
   } catch (err) {
     error.value = err.message || lang.get("bookings.loadError");
     booking.value = null;
@@ -161,34 +153,26 @@ const openModal = async (bookingId) => {
 const closeModal = () => {
   isVisible.value = false;
   booking.value = null;
-  originalBooking.value = null;
   error.value = null;
 };
 
-const saveChanges = () => {
+const saveChanges = async () => {
   if (!booking.value) return;
 
+  isLoading.value = true;
   try {
-    const checkInStr = editTimeData.value.checkIn.toISOString();
-    const checkOutStr = editTimeData.value.checkOut.toISOString();
-
-    booking.value.checkIn = checkInStr;
-    booking.value.checkOut = checkOutStr;
-    booking.value.pricePerUnit = editPriceData.value.pricePerUnit;
-
-    // Update the booking in the store
-    store.updateBooking(booking.value.id, {
-      checkIn: checkInStr,
-      checkOut: checkOutStr,
-      pricePerUnit: editPriceData.value.pricePerUnit,
+    // Call API to update booking
+    await updateBooking(booking.value.id, {
+      checkIn: booking.value.checkIn,
+      checkOut: booking.value.checkOut,
+      pricePerUnit: booking.value.pricePerUnit,
     });
-
-    // Update original booking for change detection
-    originalBooking.value = { ...booking.value };
 
     alert(lang.get("common.saveSuccess"));
   } catch (err) {
     alert(lang.get("common.saveError") + err.message);
+  } finally {
+    isLoading.value = false;
   }
 };
 
@@ -208,12 +192,26 @@ const removeGuest = (guestId) => {
 };
 
 const handleTimeUpdate = (timeData) => {
-  editTimeData.value = {
-    checkIn: timeData.checkIn,
-    checkOut: timeData.checkOut,
-  };
   booking.value.checkIn = timeData.checkIn.toISOString();
   booking.value.checkOut = timeData.checkOut.toISOString();
+  console.log("Time updated:", timeData);
+  booking.value.bookingType = timeData.bookingType;
+  if (timeData.bookingType === BOOKING_TYPES.HOURLY) {
+    booking.value.totalHourDuration = timeData.totalHour;
+    booking.value.totalDayDuration = 0;
+  } else {
+    booking.value.totalDayDuration = timeData.totalDay;
+    booking.value.totalHourDuration = 0;
+  }
+
+  changedData.value.checkIn = true;
+  changedData.value.checkOut = true;
+  changedData.value.totalDuration = true;
+};
+
+const handlePriceUpdate = (pricePerUnit) => {
+  booking.value.pricePerUnit = pricePerUnit;
+  changedData.value.pricePerUnit = true;
 };
 
 const submitPrepayment = () => {
