@@ -87,6 +87,22 @@ export const getBookingById = async (bookingId) => {
     setTimeout(() => {
       const booking = hotelStore.bookings.find((b) => b.id === bookingId);
       resolve(booking || null);
-    }, 300); // Simulate 300ms network delay
+    }, 3000); // Simulate 300ms network delay
+  });
+};
+
+/**
+ * Get prepayments by booking ID (simulated API call)
+ * @param {string} bookingId - The booking ID
+ * @returns {Promise<Array>} Array of prepayments
+ */
+export const getPrepaymentsByBookingId = async (bookingId) => {
+  // Simulated API call - replace with real API later
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      const booking = hotelStore.prepayments.find((b) => b.bookingId === bookingId);
+      console.log("Fetched prepayments for bookingId", bookingId, ":", booking?.prepayments || []);
+      resolve(booking?.prepayments || []);
+    }, 3000); // Simulate 300ms network delay
   });
 };

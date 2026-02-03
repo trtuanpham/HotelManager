@@ -1,16 +1,35 @@
 <template>
   <div class="dashboard-section full">
     <h2>{{ lang.dashboard.roomStatusManagement }}</h2>
-    <template v-for="(rooms, group) in roomsByGroup" :key="group">
+    <!-- Loading State -->
+    <template v-if="isLoading">
+      <div class="room-group">
+        <h3 class="group-title">{{ lang.dashboard.group || "Group" }} 1</h3>
+        <div class="rooms-grid">
+          <div v-for="i in 8" :key="`skeleton-${i}`" class="room-card skeleton-item">
+            <div class="skeleton-content">
+              <div class="skeleton-number"></div>
+              <div class="skeleton-type"></div>
+              <div class="skeleton-status"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </template>
+    <!-- Content State -->
+    <template v-else v-for="(rooms, group) in roomsByGroup" :key="group">
       <div class="room-group">
         <h3 class="group-title">{{ lang.dashboard.group || "Group" }} {{ group }}</h3>
         <div class="rooms-grid">
-          <div v-for="room in rooms" :key="room.id" :class="['room-card', room.status.toLowerCase()]" @click="handleRoomCardClick(room)">
-            <div class="room-card-content">
+          <div v-for="room in rooms" :key="room.id" :class="['room-card', room.status.toLowerCase()]" @click="processingRoomId !== room.id && handleRoomCardClick(room)">
+            <div v-if="processingRoomId === room.id" class="loading-overlay">
+              <div class="loading-spinner"></div>
+            </div>
+            <div v-else class="room-card-content">
               <div class="room-number">{{ room.number }}</div>
               <div class="room-type">{{ room.type }}</div>
               <div class="room-status-text">{{ MAP_STATUS_LABEL[room.status] }}</div>
-              <div v-if="room.guest" class="room-guest">{{ room.guest }}</div>
+              <div v-if="room.bookingId" class="room-booking">Booking: {{ room.bookingId }}</div>
             </div>
           </div>
         </div>
@@ -24,12 +43,23 @@
 
 <script setup>
 import { computed, ref } from "vue";
-import { hotelStore as store } from "../stores/hotelStore";
 import { langVN as lang } from "../locales/vi";
 import ConfirmDialog from "./modals/ConfirmDialog.vue";
 import CreateBookingModal from "./modals/CreateBookingModal.vue";
 import BookingDetailsModal from "./modals/BookingDetailsModal.vue";
 import { ROOM_STATUS } from "../data/constants";
+import { updateRoomStatus } from "../services/roomService";
+
+const props = defineProps({
+  rooms: {
+    type: Array,
+    default: () => [],
+  },
+  isLoading: {
+    type: Boolean,
+    default: false,
+  },
+});
 
 const MAP_STATUS_LABEL = {
   Available: lang.dashboard.statusAvailable,
@@ -41,10 +71,11 @@ const MAP_STATUS_LABEL = {
 const confirmDialog = ref(null);
 const createBookingModal = ref(null);
 const bookingDetailsModal = ref(null);
+const processingRoomId = ref(null);
 
 const roomsByGroup = computed(() => {
   const grouped = {};
-  store.rooms.forEach((room) => {
+  props.rooms.forEach((room) => {
     if (!grouped[room.group]) {
       grouped[room.group] = [];
     }
@@ -63,17 +94,22 @@ const handleRoomCardClick = async (room) => {
       confirmText: lang.confirmDialog.confirmDone,
     });
     if (result) {
-      store.updateRoom(room.id, { status: ROOM_STATUS.AVAILABLE });
+      try {
+        processingRoomId.value = room.id;
+        await updateRoomStatus(room.id, ROOM_STATUS.AVAILABLE);
+        console.log("Room marked as available");
+      } catch (err) {
+        console.error("Failed to update room status:", err);
+        alert("Lỗi: " + err.message);
+      } finally {
+        processingRoomId.value = null;
+      }
     }
   } else if (room.status === ROOM_STATUS.AVAILABLE) {
     createBookingModal.value.openModal(room.number);
   } else if (room.status === ROOM_STATUS.OCCUPIED) {
-    // Find the current booking for this room
-    const booking = store.bookings.find((b) => b.roomNumber === room.number);
-    console.log("Found booking for room:", booking);
-    if (booking) {
-      bookingDetailsModal.value.openModal(booking);
-    }
+    //
+    bookingDetailsModal.value.openModal(room.bookingId);
   }
 };
 </script>
@@ -130,6 +166,7 @@ const handleRoomCardClick = async (room) => {
   align-items: center;
   justify-content: center;
   margin-bottom: 15px;
+  position: relative;
 }
 
 .room-card:hover {
@@ -215,5 +252,93 @@ const handleRoomCardClick = async (room) => {
   border-top: 1px solid currentColor;
   padding-top: 4px;
   opacity: 0.8;
+}
+
+.room-booking {
+  font-size: 11px;
+  opacity: 0.75;
+  font-style: italic;
+  margin-top: 4px;
+  border-top: 1px solid currentColor;
+  padding-top: 4px;
+  opacity: 0.8;
+}
+
+.loading-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 12px;
+  z-index: 10;
+}
+
+.loading-spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid #e5e7eb;
+  border-top-color: #667eea;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -1000px 0;
+  }
+  100% {
+    background-position: 1000px 0;
+  }
+}
+
+.skeleton-item {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 1000px 100%;
+  animation: shimmer 2s infinite;
+  border: 2px solid #e5e7eb;
+  cursor: default;
+}
+
+.skeleton-item:hover {
+  transform: none;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.skeleton-content {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+.skeleton-number {
+  height: 28px;
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 4px;
+  animation: shimmer 2s infinite;
+}
+
+.skeleton-type {
+  height: 13px;
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 3px;
+  animation: shimmer 2s infinite;
+  animation-delay: 0.1s;
+}
+
+.skeleton-status {
+  height: 12px;
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 3px;
+  animation: shimmer 2s infinite;
+  animation-delay: 0.2s;
 }
 </style>

@@ -16,10 +16,10 @@
       </div>
     </div>
 
-    <div v-if="bookingPrepayments.length > 0" class="prepayment-list">
+    <div v-if="loadedPrepayments.length > 0" class="prepayment-list">
       <div class="prepayment-list-header">Danh sách trả tiền trước</div>
       <div class="prepayment-items">
-        <div v-for="prepayment in bookingPrepayments" :key="prepayment.id" class="prepayment-item">
+        <div v-for="prepayment in loadedPrepayments" :key="prepayment.id" class="prepayment-item">
           <div>
             <span class="label">Ngày thanh toán:</span>
             <div class="value">{{ formatPrepaymentDate(prepayment.paymentDate) }}</div>
@@ -43,27 +43,50 @@
         </div>
       </div>
     </div>
-    <div v-else class="empty-message">Chưa có trả tiền trước</div>
+    <div v-else-if="!isLoadingPrepayments" class="empty-message">Chưa có trả tiền trước</div>
+    <div v-else class="empty-message">Đang tải...</div>
   </div>
 </template>
 
 <script setup>
-defineProps({
+import { ref, onMounted, computed } from "vue";
+import { getPrepaymentsByBookingId } from "../../../services/bookingService";
+
+const props = defineProps({
   booking: {
     type: Object,
     required: true,
   },
-  totalPrepaid: {
-    type: Number,
-    required: true,
-  },
-  bookingPrepayments: {
-    type: Array,
-    required: true,
-  },
 });
 
-defineEmits(["submit-prepayment"]);
+const emit = defineEmits(["submit-prepayment", "prepayments-loaded"]);
+
+const loadedPrepayments = ref([]);
+const isLoadingPrepayments = ref(false);
+
+const totalPrepaid = computed(() => {
+  if (!props.booking) return 0;
+  return props.booking.totalPrepaid || 0;
+});
+
+const loadPrepayments = async () => {
+  if (!props.booking?.id) return;
+
+  isLoadingPrepayments.value = true;
+  try {
+    const prepayments = await getPrepaymentsByBookingId(props.booking.id);
+    loadedPrepayments.value = prepayments;
+    emit("prepayments-loaded", prepayments);
+  } catch (err) {
+    console.error("Failed to load prepayments:", err);
+  } finally {
+    isLoadingPrepayments.value = false;
+  }
+};
+
+onMounted(() => {
+  loadPrepayments();
+});
 
 const formatPrepaymentDate = (dateStr) => {
   if (!dateStr) return "---";

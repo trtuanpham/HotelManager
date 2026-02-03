@@ -31,6 +31,13 @@ export const langVN = {
     quickDay: "{day} ngày",
   },
 
+  booking: {
+    pricingInfo: "Thông tin giá",
+    stayDuration: "Thời gian lưu trú",
+    pricePerUnit: "Giá trên đơn vị (VND)",
+    totalPrice: "Thành tiền",
+  },
+
   // Dashboard
   dashboard: {
     title: "📊 Dashboard",
@@ -182,6 +189,13 @@ export const langVN = {
     roomCleaningConfirm: "Phòng {roomNumber} đã được dọn xong chưa?",
     confirmDone: "Đã xong",
   },
-};
 
-export default langVN;
+  // Common
+  common: {
+    edit: "Sửa",
+    save: "Lưu",
+    cancel: "Hủy",
+    day: "ngày",
+    hour: "giờ",
+  },
+};

@@ -76,13 +76,10 @@ export const getAllGuests = async () => {
 export const getGuestById = async (id) => {
   // Dummy API call - replace with real API later
   return new Promise((resolve) => {
-    setTimeout(
-      () => {
-        const guest = store.guests.find((g) => g.id === id);
-        resolve(guest || null);
-      },
-      Math.random() * 1000 + 1000,
-    ); // Simulate 1-2 second network delay
+    setTimeout(() => {
+      const guest = store.guests.find((g) => g.id === id);
+      resolve(guest || null);
+    }, 3000); // Simulate 1-2 second network delay
   });
 };
 

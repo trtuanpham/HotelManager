@@ -1,8 +1,8 @@
 /**
- * LanguageManager - Centralized language/i18n management
+ * LanguageController - Centralized language/i18n management
  * Provides safe access to nested language keys with fallback support
  */
-class LanguageManager {
+class LanguageController {
   constructor(langData = null) {
     this.langData = langData;
   }
@@ -23,8 +23,8 @@ class LanguageManager {
    *
    * @example
    * // If langData = { createBooking: { quickDay: "Add {day} day" } }
-   * lang.get("createBooking.quickDay", "1") // Returns "Add 1 day"
-   * lang.get("createBooking.missing") // Returns "createBooking.missing" (fallback)
+   * languageController.get("createBooking.quickDay", "1") // Returns "Add 1 day"
+   * languageController.get("createBooking.missing") // Returns "createBooking.missing" (fallback)
    */
   get(key, placeholder = null) {
     if (!key) return "";
@@ -87,7 +87,7 @@ class LanguageManager {
 }
 
 // Create singleton instance
-export const languageManager = new LanguageManager();
+export const languageController = new LanguageController();
 
 // Export class for creating additional instances if needed
-export default LanguageManager;
+export default LanguageController;

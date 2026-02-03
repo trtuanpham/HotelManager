@@ -2,34 +2,34 @@
   <div class="time-duration-picker">
     <div class="form-row">
       <div class="form-group">
-        <label>{{ languageManager.get("createBooking.checkIn", null) || "Check-in" }}<span class="required">*</span></label>
+        <label>{{ lang.get("createBooking.checkIn", null) || "Check-in" }}<span class="required">*</span></label>
         <input :value="formatDateTimeLocal((formData || timeData)?.checkIn)" @input="(e) => updateCheckIn(parseDateTime(e.target.value))" type="datetime-local" class="input-field" />
       </div>
 
       <div class="form-group">
-        <label>{{ languageManager.get("createBooking.checkOut", null) || "Check-out" }}<span class="required">*</span></label>
+        <label>{{ lang.get("createBooking.checkOut", null) || "Check-out" }}<span class="required">*</span></label>
         <input :value="formatDateTimeLocal((formData || timeData)?.checkOut)" @input="(e) => updateCheckOut(parseDateTime(e.target.value))" type="datetime-local" class="input-field" />
       </div>
     </div>
 
     <div class="quick-duration-buttons">
       <button @click="setQuickDuration(1, 'hour')" class="quick-btn quick-btn-hour">
-        {{ languageManager.get("createBooking.quickHour").replace("{hour}", "1") }}
+        {{ lang.get("createBooking.quickHour").replace("{hour}", "1") }}
       </button>
       <button @click="setQuickDuration(2, 'hour')" class="quick-btn quick-btn-hour">
-        {{ languageManager.get("createBooking.quickHour").replace("{hour}", "2") }}
+        {{ lang.get("createBooking.quickHour").replace("{hour}", "2") }}
       </button>
       <button @click="setQuickDuration(3, 'hour')" class="quick-btn quick-btn-hour">
-        {{ languageManager.get("createBooking.quickHour").replace("{hour}", "3") }}
+        {{ lang.get("createBooking.quickHour").replace("{hour}", "3") }}
       </button>
       <button @click="setQuickDuration(1, 'day')" class="quick-btn quick-btn-day">
-        {{ languageManager.get("createBooking.quickDay").replace("{day}", "1") }}
+        {{ lang.get("createBooking.quickDay").replace("{day}", "1") }}
       </button>
       <button @click="setQuickDuration(2, 'day')" class="quick-btn quick-btn-day">
-        {{ languageManager.get("createBooking.quickDay").replace("{day}", "2") }}
+        {{ lang.get("createBooking.quickDay").replace("{day}", "2") }}
       </button>
       <button @click="setQuickDuration(3, 'day')" class="quick-btn quick-btn-day">
-        {{ languageManager.get("createBooking.quickDay").replace("{day}", "3") }}
+        {{ lang.get("createBooking.quickDay").replace("{day}", "3") }}
       </button>
     </div>
     <!-- 
@@ -43,8 +43,7 @@
 
 <script setup>
 import { computed, watch } from "vue";
-import { languageManager } from "../../../services/languageManager";
-import { langVN as lang } from "../../../locales/vi";
+import { languageController as lang } from "../../../controller/languageController";
 
 const props = defineProps({
   timeData: {
@@ -72,7 +71,7 @@ watch(
   () => props.lang,
   (newLang) => {
     if (newLang) {
-      languageManager.setLanguage(newLang);
+      lang.setLanguage(newLang);
     }
   },
   { immediate: true },
@@ -80,7 +79,7 @@ watch(
 
 // If no lang prop provided, use default langVN
 if (!props.lang) {
-  languageManager.setLanguage(lang);
+  lang.setLanguage(lang);
 }
 
 // Support both timeData and formData props

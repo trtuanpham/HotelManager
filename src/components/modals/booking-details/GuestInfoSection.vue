@@ -26,38 +26,37 @@
     </div>
 
     <div class="guests-grid">
-      <!-- Main Guest Card -->
-      <div v-if="mainGuest" class="guest-card main-guest">
-        <div class="guest-badge">khách chính</div>
-        <div class="guest-card-avatar">
-          <img :src="mainGuestAvatarUrl" alt="Guest" class="guest-card-img" />
+      <!-- Loading State -->
+      <template v-if="isLoadingGuests">
+        <div v-for="i in 2" :key="`skeleton-${i}`" class="guest-card skeleton-item">
+          <div class="skeleton-avatar"></div>
+          <div class="skeleton-name"></div>
+          <div class="skeleton-detail"></div>
         </div>
-        <div class="guest-card-info">
-          <div class="guest-card-name">{{ mainGuestName }}</div>
-          <small class="guest-card-detail">ID: {{ mainGuest?.citizenId || "---" }}</small>
-        </div>
-      </div>
-
+      </template>
       <!-- Accompanying Guest Cards -->
-      <div v-for="guest in accompaniedGuests" :key="guest.id" class="guest-card">
-        <div class="guest-card-avatar">
-          <img :src="getGuestAvatar(guest)" alt="Guest" class="guest-card-img" />
+      <template v-else>
+        <div v-for="guestId in accompaniedGuestIds" :key="guestId" class="guest-card">
+          <div class="guest-card-avatar">
+            <img :src="getGuestAvatar(guestId)" alt="Guest" class="guest-card-img" />
+          </div>
+          <div class="guest-card-info">
+            <div class="guest-card-name">{{ getGuestName(guestId) }}</div>
+            <small class="guest-card-detail">ID: {{ getGuestCitizenId(guestId) }}</small>
+          </div>
+          <button type="button" class="remove-btn" @click="removeGuest(guestId)">×</button>
         </div>
-        <div class="guest-card-info">
-          <div class="guest-card-name">{{ guest.name }}</div>
-          <small class="guest-card-detail">ID: {{ guest.citizenId || "---" }}</small>
-        </div>
-        <button type="button" class="remove-btn" @click="removeGuest(guest.id)">×</button>
-      </div>
+      </template>
     </div>
 
-    <div v-if="accompaniedGuests.length === 0" class="empty-message">Chưa có khách đi cùng</div>
+    <div v-if="accompaniedGuestIds.length === 0 && !isLoadingGuests" class="empty-message">Chưa có khách hàng</div>
   </div>
 </template>
 
 <script setup>
-import { ref } from "vue";
+import { ref, onMounted, watch, computed } from "vue";
 import { DEFAULT_AVATAR_SVG } from "../../../data/constants";
+import { getAllGuests, getGuestById } from "../../../services/guestService";
 
 const props = defineProps({
   mainGuest: {
@@ -87,6 +86,40 @@ const emit = defineEmits(["add-guest", "remove-guest"]);
 const guestSearchQuery = ref("");
 const showGuestDropdown = ref(false);
 const filteredGuests = ref([]);
+const isLoadingGuests = ref(false);
+const loadedGuestData = ref({});
+
+// Computed property to get guest IDs
+const accompaniedGuestIds = computed(() => props.accompaniedGuests.map((g) => g.id));
+
+// Load detailed guest data for each accompanied guest
+const loadGuestDetails = async (guestId) => {
+  if (!guestId) return;
+  if (loadedGuestData.value[guestId]) {
+    console.log("Guest data already cached:", guestId);
+    return;
+  }
+
+  try {
+    console.log("Fetching guest data for:", guestId);
+    const guestData = await getGuestById(guestId);
+    console.log("Loaded guest data:", guestId, guestData);
+    if (guestData) {
+      loadedGuestData.value[guestId] = guestData;
+    } else {
+      console.warn("No data returned for guest:", guestId);
+    }
+  } catch (err) {
+    console.error(`Failed to load guest ${guestId}:`, err);
+  }
+};
+
+// Get guest data (from loaded data or props)
+const getGuestData = (guestId) => {
+  const data = loadedGuestData.value[guestId];
+  console.log("Getting guest data for", guestId, ":", data);
+  return data;
+};
 
 const handleGuestSearchInput = (query) => {
   if (!query) {
@@ -118,9 +151,47 @@ const removeGuest = (guestId) => {
   emit("remove-guest", guestId);
 };
 
-const getGuestAvatar = (guest) => {
+const getGuestAvatar = (guestId) => {
+  const guest = getGuestData(guestId);
   return guest?.imageUrl || DEFAULT_AVATAR_SVG;
 };
+
+const getGuestName = (guestId) => {
+  const guest = getGuestData(guestId);
+  return guest?.name || "---";
+};
+
+const getGuestCitizenId = (guestId) => {
+  const guest = getGuestData(guestId);
+  return guest?.citizenId || "---";
+};
+
+// Load guests on mount
+onMounted(async () => {
+  isLoadingGuests.value = true;
+  try {
+    await getAllGuests();
+  } catch (err) {
+    console.error("Failed to load guests:", err);
+  } finally {
+    isLoadingGuests.value = false;
+  }
+});
+
+// Watch for changes in accompanied guests and load their details
+watch(
+  () => props.accompaniedGuests,
+  async (newGuests) => {
+    if (!newGuests || newGuests.length === 0) return;
+
+    console.log("Loading guest details for:", newGuests);
+    for (const guest of newGuests) {
+      console.log("Loading guest:", guest.id);
+      await loadGuestDetails(guest.id);
+    }
+  },
+  { immediate: true, deep: true },
+);
 </script>
 
 <style scoped>
@@ -249,27 +320,6 @@ const getGuestAvatar = (guest) => {
   position: relative;
 }
 
-.guest-card.main-guest {
-  border: 2px solid #667eea;
-  background: #f9fafb;
-}
-
-.guest-badge {
-  position: absolute;
-  top: -10px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: #667eea;
-  color: white;
-  padding: 3px 10px;
-  border-radius: 12px;
-  font-size: 10px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  white-space: nowrap;
-}
-
 .guest-card-avatar {
   display: flex;
   justify-content: center;
@@ -279,7 +329,7 @@ const getGuestAvatar = (guest) => {
   width: 60px;
   height: 60px;
   object-fit: cover;
-  border-radius: 50%;
+  border-radius: 4px;
   border: 2px solid #e5e7eb;
 }
 
@@ -327,5 +377,54 @@ const getGuestAvatar = (guest) => {
   font-size: 12px;
   background: #f3f4f6;
   border-radius: 6px;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -1000px 0;
+  }
+  100% {
+    background-position: 1000px 0;
+  }
+}
+
+.skeleton-item {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 1000px 100%;
+  animation: shimmer 2s infinite;
+  border: 1px solid #e5e7eb;
+  cursor: default;
+}
+
+.skeleton-item:hover {
+  transform: none;
+}
+
+.skeleton-avatar {
+  width: 60px;
+  height: 60px;
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  margin-bottom: 4px;
+  animation: shimmer 2s infinite;
+}
+
+.skeleton-name {
+  height: 12px;
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 3px;
+  width: 80%;
+  margin-bottom: 6px;
+  animation: shimmer 2s infinite;
+  animation-delay: 0.1s;
+}
+
+.skeleton-detail {
+  height: 11px;
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 3px;
+  width: 70%;
+  animation: shimmer 2s infinite;
+  animation-delay: 0.2s;
 }
 </style>

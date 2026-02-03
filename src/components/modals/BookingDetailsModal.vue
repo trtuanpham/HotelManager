@@ -24,10 +24,10 @@
         </div>
 
         <!-- Pricing Section -->
-        <PricingSection :edit-time-data="editTimeData" :edit-price-data="editPriceData" :booking-type="booking.bookingType" @update:editPriceData="editPriceData = $event" />
+        <PricingSection :booking="booking" @update:pricePerUnit="editPriceData.pricePerUnit = $event" />
 
         <!-- Prepayment Section -->
-        <PrepaymentSection :booking="booking" :total-prepaid="totalPrepaid" :booking-prepayments="bookingPrepayments" @submit-prepayment="submitPrepayment" />
+        <PrepaymentSection :booking="booking" @submit-prepayment="submitPrepayment" />
 
         <!-- Guest Info Section -->
         <GuestInfoSection
@@ -58,7 +58,8 @@
 
     <template #footer>
       <div class="modal-footer">
-        <button class="btn btn-primary" @click="closeModal">Đóng</button>
+        <button class="btn btn-secondary" @click="closeModal">Đóng</button>
+        <button class="btn btn-primary" :disabled="!hasChanges" @click="saveChanges">Lưu thay đổi</button>
       </div>
     </template>
   </ModalBase>
@@ -71,7 +72,6 @@ import { ref, computed } from "vue";
 import { hotelStore as store } from "../../stores/hotelStore";
 import { DEFAULT_AVATAR_SVG } from "../../data/constants";
 import { getBookingById } from "../../services/bookingService";
-import { addAccompanyingGuest, removeAccompanyingGuest } from "../../services/bookingService";
 import ModalBase from "./ModalBase.vue";
 import AddPrepaymentModal from "./AddPrepaymentModal.vue";
 import TimeDurationPicker from "./booking-details/TimeDurationPicker.vue";
@@ -85,6 +85,7 @@ const isVisible = ref(false);
 const isLoading = ref(false);
 const error = ref(null);
 const booking = ref(null);
+const originalBooking = ref(null);
 const editTimeData = ref({
   checkIn: null,
   checkOut: null,
@@ -96,7 +97,8 @@ const addPrepaymentModal = ref(null);
 
 const mainGuest = computed(() => {
   if (!booking.value) return null;
-  return store.guests.find((g) => g.id === booking.value.guestId);
+  const mainGuestId = booking.value.guestIds?.[0];
+  return store.guests.find((g) => g.id === mainGuestId);
 });
 
 const mainGuestName = computed(() => mainGuest.value?.name || "---");
@@ -111,17 +113,17 @@ const selectedRoom = computed(() => {
 });
 
 const accompaniedGuests = computed(() => {
-  if (!booking.value || !booking.value.accompaniedGuestIds) return [];
-  return booking.value.accompaniedGuestIds.map((guestId) => store.guests.find((g) => g.id === guestId)).filter((guest) => guest !== undefined);
+  if (!booking.value || !booking.value.guestIds || booking.value.guestIds.length <= 1) return [];
+  const mainGuestId = booking.value.guestIds[0];
+  return booking.value.guestIds
+    .slice(1)
+    .map((guestId) => store.guests.find((g) => g.id === guestId))
+    .filter((guest) => guest !== undefined);
 });
 
 const availableGuests = computed(() => {
-  return store.guests.filter((g) => g.id !== booking.value?.guestId && !booking.value?.accompaniedGuestIds.includes(g.id));
-});
-
-const bookingPrepayments = computed(() => {
-  if (!booking.value) return [];
-  return store.getPrepaymentsByBookingId(booking.value.id);
+  if (!booking.value) return store.guests;
+  return store.guests.filter((g) => !booking.value.guestIds.includes(g.id));
 });
 
 const totalPrepaid = computed(() => {
@@ -129,34 +131,27 @@ const totalPrepaid = computed(() => {
   return store.getTotalPrepaidByBookingId(booking.value.id);
 });
 
-const stayDuration = computed(() => {
-  if (!booking.value) return "---";
-  const checkIn = new Date(booking.value.checkIn);
-  const checkOut = new Date(booking.value.checkOut);
-  const diffMs = checkOut - checkIn;
-  const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-  const diffDays = Math.floor(diffHours / 24);
-  const remainingHours = diffHours % 24;
-
-  if (diffDays > 0) {
-    return `${diffDays} ngày ${remainingHours} giờ`;
-  } else {
-    return `${diffHours} giờ`;
-  }
+const hasChanges = computed(() => {
+  if (!booking.value || !originalBooking.value) return false;
+  const checkInChanged = editTimeData.value.checkIn.toISOString() !== originalBooking.value.checkIn;
+  const checkOutChanged = editTimeData.value.checkOut.toISOString() !== originalBooking.value.checkOut;
+  const priceChanged = editPriceData.value.pricePerUnit !== originalBooking.value.pricePerUnit;
+  return checkInChanged || checkOutChanged || priceChanged;
 });
 
-const openModal = (bookingId) => {
+const openModal = async (bookingId) => {
   isVisible.value = true;
   isLoading.value = true;
   error.value = null;
 
   try {
-    const bookingData = getBookingById(bookingId);
+    const bookingData = await getBookingById(bookingId);
     if (!bookingData) {
       throw new Error("Không tìm thấy đặt phòng");
     }
 
     booking.value = bookingData;
+    originalBooking.value = { ...bookingData };
     editTimeData.value = {
       checkIn: new Date(bookingData.checkIn),
       checkOut: new Date(bookingData.checkOut),
@@ -175,23 +170,49 @@ const openModal = (bookingId) => {
 const closeModal = () => {
   isVisible.value = false;
   booking.value = null;
+  originalBooking.value = null;
   error.value = null;
-  saveTimeChanges();
+};
+
+const saveChanges = () => {
+  if (!booking.value) return;
+
+  try {
+    const checkInStr = editTimeData.value.checkIn.toISOString();
+    const checkOutStr = editTimeData.value.checkOut.toISOString();
+
+    booking.value.checkIn = checkInStr;
+    booking.value.checkOut = checkOutStr;
+    booking.value.pricePerUnit = editPriceData.value.pricePerUnit;
+
+    // Update the booking in the store
+    store.updateBooking(booking.value.id, {
+      checkIn: checkInStr,
+      checkOut: checkOutStr,
+      pricePerUnit: editPriceData.value.pricePerUnit,
+    });
+
+    // Update original booking for change detection
+    originalBooking.value = { ...booking.value };
+
+    alert("Lưu thành công!");
+  } catch (err) {
+    alert("Lỗi lưu dữ liệu: " + err.message);
+  }
 };
 
 const addGuest = (guest) => {
   if (!booking.value) return;
-  const result = addAccompanyingGuest(booking.value.id, guest.id);
-  if (!result.success) {
-    alert(result.error);
+  if (!booking.value.guestIds.includes(guest.id)) {
+    booking.value.guestIds.push(guest.id);
   }
 };
 
 const removeGuest = (guestId) => {
   if (!booking.value) return;
-  const result = removeAccompanyingGuest(booking.value.id, guestId);
-  if (!result.success) {
-    alert(result.error);
+  const index = booking.value.guestIds.indexOf(guestId);
+  if (index > -1) {
+    booking.value.guestIds.splice(index, 1);
   }
 };
 
@@ -480,10 +501,26 @@ defineExpose({
   color: white;
 }
 
-.btn-primary:hover {
+.btn-primary:hover:not(:disabled) {
   background: #5568d3;
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.btn-primary:disabled {
+  background: #d1d5db;
+  color: #9ca3af;
+  cursor: not-allowed;
+}
+
+.btn-secondary {
+  background: #e5e7eb;
+  color: #374151;
+}
+
+.btn-secondary:hover {
+  background: #d1d5db;
+  transform: translateY(-1px);
 }
 
 .modal-footer {

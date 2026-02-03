@@ -1,17 +1,17 @@
 <template>
   <div class="details-section">
-    <h4 class="section-title">Thông tin giá</h4>
+    <h4 class="section-title">{{ lang.get("booking.pricingInfo") }}</h4>
     <div class="pricing-grid">
       <div class="pricing-item">
-        <span class="label">Thời gian lưu trú:</span>
+        <span class="label">{{ lang.get("booking.stayDuration") }}:</span>
         <span class="value">{{ editStayDuration }}</span>
       </div>
       <div class="pricing-item">
-        <span class="label">Giá trên đơn vị (VND)<span class="required">*</span></span>
+        <span class="label">{{ lang.get("booking.pricePerUnit") }}<span class="required">*</span></span>
         <div class="price-value-container">
           <div v-if="!isEditingPrice" class="price-display">
             <span class="value">{{ editPriceData.pricePerUnit?.toLocaleString("vi-VN") || "---" }} VND</span>
-            <button class="edit-price-btn" @click="startEditPrice">Sửa</button>
+            <button class="edit-price-btn" @click="startEditPrice">{{ lang.get("common.edit") }}</button>
           </div>
           <div v-else class="price-edit-mode">
             <input
@@ -21,13 +21,13 @@
               class="input-field price-input-single"
               placeholder="0"
             />
-            <button class="btn-save-price" @click="savePriceChanges">Lưu</button>
-            <button class="btn-cancel-price" @click="cancelEditPrice">Hủy</button>
+            <button class="btn-save-price" @click="savePriceChanges">{{ lang.get("common.save") }}</button>
+            <button class="btn-cancel-price" @click="cancelEditPrice">{{ lang.get("common.cancel") }}</button>
           </div>
         </div>
       </div>
       <div class="pricing-item">
-        <span class="label">Thành tiền:</span>
+        <span class="label">{{ lang.get("booking.totalPrice") }}:</span>
         <span class="value total-price">{{ editCalculatedTotalPrice?.toLocaleString("vi-VN") || "---" }} VND</span>
       </div>
     </div>
@@ -35,51 +35,57 @@
 </template>
 
 <script setup>
-import { ref, computed } from "vue";
+import { ref, computed, watch } from "vue";
+import { languageController as lang } from "../../../controller/languageController";
 
 const props = defineProps({
-  editTimeData: {
+  booking: {
     type: Object,
-    required: true,
-  },
-  editPriceData: {
-    type: Object,
-    required: true,
-  },
-  bookingType: {
-    type: String,
     required: true,
   },
 });
 
-const emit = defineEmits(["update:editPriceData", "update:tempPricePerUnit"]);
+const emit = defineEmits(["update:pricePerUnit"]);
 
 const isEditingPrice = ref(false);
 const tempPricePerUnit = ref(0);
 
+const editTimeData = computed(() => ({
+  checkIn: new Date(props.booking.checkIn),
+  checkOut: new Date(props.booking.checkOut),
+}));
+
+const editPriceData = computed(() => ({
+  pricePerUnit: props.booking.pricePerUnit || 0,
+}));
+
+const bookingType = computed(() => props.booking.bookingType || "hourly");
+
 const editStayDuration = computed(() => {
-  if (!props.editTimeData.checkIn || !props.editTimeData.checkOut) return "---";
-  const checkIn = new Date(props.editTimeData.checkIn);
-  const checkOut = new Date(props.editTimeData.checkOut);
+  const checkIn = editTimeData.value.checkIn;
+  const checkOut = editTimeData.value.checkOut;
+  if (!checkIn || !checkOut) return "---";
+
   const diffMs = checkOut - checkIn;
   const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
   const diffDays = Math.floor(diffHours / 24);
   const remainingHours = diffHours % 24;
 
   if (diffDays > 0) {
-    return `${diffDays} ngày ${remainingHours} giờ`;
+    return `${diffDays} ${lang.get("common.day")} ${remainingHours} ${lang.get("common.hour")}`;
   } else {
-    return `${diffHours} giờ`;
+    return `${diffHours} ${lang.get("common.hour")}`;
   }
 });
 
 const calculateStayUnits = () => {
-  if (!props.editTimeData.checkIn || !props.editTimeData.checkOut) return 0;
-  const checkIn = new Date(props.editTimeData.checkIn);
-  const checkOut = new Date(props.editTimeData.checkOut);
+  const checkIn = editTimeData.value.checkIn;
+  const checkOut = editTimeData.value.checkOut;
+  if (!checkIn || !checkOut) return 0;
+
   const diffMs = checkOut - checkIn;
 
-  if (props.bookingType === "hourly") {
+  if (bookingType.value === "hourly") {
     return Math.ceil(diffMs / (1000 * 60 * 60));
   } else {
     return Math.ceil(diffMs / (1000 * 60 * 60 * 24));
@@ -88,19 +94,17 @@ const calculateStayUnits = () => {
 
 const editCalculatedTotalPrice = computed(() => {
   const units = calculateStayUnits();
-  return units * (props.editPriceData.pricePerUnit || 0);
+  return units * (editPriceData.value.pricePerUnit || 0);
 });
 
 const startEditPrice = () => {
-  tempPricePerUnit.value = props.editPriceData.pricePerUnit;
+  tempPricePerUnit.value = editPriceData.value.pricePerUnit;
   isEditingPrice.value = true;
 };
 
 const savePriceChanges = () => {
   if (tempPricePerUnit.value >= 0) {
-    emit("update:editPriceData", {
-      pricePerUnit: tempPricePerUnit.value,
-    });
+    emit("update:pricePerUnit", tempPricePerUnit.value);
     isEditingPrice.value = false;
   }
 };
@@ -109,6 +113,16 @@ const cancelEditPrice = () => {
   isEditingPrice.value = false;
   tempPricePerUnit.value = 0;
 };
+
+// Watch for booking changes and reset edit state
+watch(
+  () => props.booking,
+  () => {
+    isEditingPrice.value = false;
+    tempPricePerUnit.value = 0;
+  },
+  { deep: true },
+);
 </script>
 
 <style scoped>

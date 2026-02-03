@@ -3,32 +3,43 @@
     <h1>{{ lang.dashboard.title }}</h1>
 
     <div class="stats-grid">
-      <div class="stat-card">
-        <h3>{{ lang.dashboard.totalRooms }}</h3>
-        <p class="stat-number">{{ store.rooms.length }}</p>
-        <span class="stat-label">{{ lang.dashboard.rooms }}</span>
-      </div>
+      <!-- Loading State -->
+      <template v-if="isLoadingRooms">
+        <div v-for="i in 4" :key="`stat-skeleton-${i}`" class="stat-card skeleton-card">
+          <div class="skeleton-header"></div>
+          <div class="skeleton-number"></div>
+          <div class="skeleton-label"></div>
+        </div>
+      </template>
+      <!-- Content State -->
+      <template v-else>
+        <div class="stat-card">
+          <h3>{{ lang.dashboard.totalRooms }}</h3>
+          <p class="stat-number">{{ rooms.length }}</p>
+          <span class="stat-label">{{ lang.dashboard.rooms }}</span>
+        </div>
 
-      <div class="stat-card">
-        <h3>{{ lang.dashboard.availableRooms }}</h3>
-        <p class="stat-number">{{ availableRooms }}</p>
-        <span class="stat-label">{{ lang.dashboard.available }}</span>
-      </div>
+        <div class="stat-card">
+          <h3>{{ lang.dashboard.availableRooms }}</h3>
+          <p class="stat-number">{{ availableRooms }}</p>
+          <span class="stat-label">{{ lang.dashboard.available }}</span>
+        </div>
 
-      <div class="stat-card">
-        <h3>{{ lang.dashboard.occupiedRooms }}</h3>
-        <p class="stat-number">{{ occupiedRooms }}</p>
-        <span class="stat-label">{{ lang.dashboard.occupied }}</span>
-      </div>
+        <div class="stat-card">
+          <h3>{{ lang.dashboard.occupiedRooms }}</h3>
+          <p class="stat-number">{{ occupiedRooms }}</p>
+          <span class="stat-label">{{ lang.dashboard.occupied }}</span>
+        </div>
 
-      <div class="stat-card">
-        <h3>{{ lang.dashboard.totalGuests }}</h3>
-        <p class="stat-number">{{ store.guests.length }}</p>
-        <span class="stat-label">{{ lang.dashboard.occupied }}</span>
-      </div>
+        <div class="stat-card">
+          <h3>{{ lang.dashboard.totalGuests }}</h3>
+          <p class="stat-number">{{ store.guests.length }}</p>
+          <span class="stat-label">{{ lang.dashboard.occupied }}</span>
+        </div>
+      </template>
     </div>
 
-    <RoomStatusGrid />
+    <RoomStatusGrid :rooms="rooms" :is-loading="isLoadingRooms" />
 
     <!-- <div class="dashboard-grid">
       <div class="dashboard-section">
@@ -93,18 +104,32 @@
 </template>
 
 <script setup>
-import { ref, computed } from "vue";
+import { ref, computed, onMounted } from "vue";
 import { hotelStore as store } from "../stores/hotelStore";
 import { langVN as lang } from "../locales/vi";
 import RoomStatusGrid from "../components/RoomStatusGrid.vue";
 import BookingDetailsModal from "../components/modals/BookingDetailsModal.vue";
 import { getUpcomingBookings } from "../services/bookingService";
+import { getAllRooms } from "../services/roomService";
 
 const bookingDetailsModalRef = ref(null);
+const rooms = ref([]);
+const isLoadingRooms = ref(true);
 
-const availableRooms = computed(() => store.rooms.filter((r) => r.status === "Available").length);
+onMounted(async () => {
+  try {
+    isLoadingRooms.value = true;
+    rooms.value = await getAllRooms();
+  } catch (err) {
+    console.error("Failed to load rooms:", err);
+  } finally {
+    isLoadingRooms.value = false;
+  }
+});
 
-const occupiedRooms = computed(() => store.rooms.filter((r) => r.status === "Occupied").length);
+const availableRooms = computed(() => rooms.value.filter((r) => r.status === "Available").length);
+
+const occupiedRooms = computed(() => rooms.value.filter((r) => r.status === "Occupied").length);
 
 const maintenanceRooms = computed(() => store.rooms.filter((r) => r.status === "Maintenance").length);
 
@@ -347,5 +372,48 @@ h1 {
   .dashboard-grid {
     grid-column: 1 / -1;
   }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -1000px 0;
+  }
+  100% {
+    background-position: 1000px 0;
+  }
+}
+
+.skeleton-card {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 1000px 100%;
+  animation: shimmer 2s infinite;
+  border-left-color: #e0e0e0 !important;
+  cursor: default;
+}
+
+.skeleton-card:hover {
+  transform: none;
+}
+
+.skeleton-header {
+  height: 14px;
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 4px;
+  margin-bottom: 10px;
+}
+
+.skeleton-number {
+  height: 36px;
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 4px;
+  margin-bottom: 8px;
+  margin-right: 10px;
+}
+
+.skeleton-label {
+  height: 12px;
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 3px;
+  width: 60%;
 }
 </style>
