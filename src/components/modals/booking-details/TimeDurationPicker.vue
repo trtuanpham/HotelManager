@@ -2,34 +2,34 @@
   <div class="time-duration-picker">
     <div class="form-row">
       <div class="form-group">
-        <label>{{ lang.get("createBooking.checkIn", null) || "Check-in" }}<span class="required">*</span></label>
-        <input :value="formatDateTimeLocal((formData || timeData)?.checkIn)" @input="(e) => updateCheckIn(parseDateTime(e.target.value))" type="datetime-local" class="input-field" />
+        <label>{{ lang.get("booking.checkIn") }}<span class="required">*</span></label>
+        <input :value="formatDateTimeLocal(checkIn)" @input="(e) => updateCheckIn(parseDateTime(e.target.value))" type="datetime-local" class="input-field" />
       </div>
 
       <div class="form-group">
-        <label>{{ lang.get("createBooking.checkOut", null) || "Check-out" }}<span class="required">*</span></label>
-        <input :value="formatDateTimeLocal((formData || timeData)?.checkOut)" @input="(e) => updateCheckOut(parseDateTime(e.target.value))" type="datetime-local" class="input-field" />
+        <label>{{ lang.get("booking.checkOut") }}<span class="required">*</span></label>
+        <input :value="formatDateTimeLocal(checkOut)" @input="(e) => updateCheckOut(parseDateTime(e.target.value))" type="datetime-local" class="input-field" />
       </div>
     </div>
 
     <div class="quick-duration-buttons">
       <button @click="setQuickDuration(1, 'hour')" class="quick-btn quick-btn-hour">
-        {{ lang.get("createBooking.quickHour").replace("{hour}", "1") }}
+        {{ lang.get("booking.quickHour").replace("{hour}", "1") }}
       </button>
       <button @click="setQuickDuration(2, 'hour')" class="quick-btn quick-btn-hour">
-        {{ lang.get("createBooking.quickHour").replace("{hour}", "2") }}
+        {{ lang.get("booking.quickHour").replace("{hour}", "2") }}
       </button>
       <button @click="setQuickDuration(3, 'hour')" class="quick-btn quick-btn-hour">
-        {{ lang.get("createBooking.quickHour").replace("{hour}", "3") }}
+        {{ lang.get("booking.quickHour").replace("{hour}", "3") }}
       </button>
       <button @click="setQuickDuration(1, 'day')" class="quick-btn quick-btn-day">
-        {{ lang.get("createBooking.quickDay").replace("{day}", "1") }}
+        {{ lang.get("booking.quickDay").replace("{day}", "1") }}
       </button>
       <button @click="setQuickDuration(2, 'day')" class="quick-btn quick-btn-day">
-        {{ lang.get("createBooking.quickDay").replace("{day}", "2") }}
+        {{ lang.get("booking.quickDay").replace("{day}", "2") }}
       </button>
       <button @click="setQuickDuration(3, 'day')" class="quick-btn quick-btn-day">
-        {{ lang.get("createBooking.quickDay").replace("{day}", "3") }}
+        {{ lang.get("booking.quickDay").replace("{day}", "3") }}
       </button>
     </div>
     <!-- 
@@ -42,21 +42,16 @@
 </template>
 
 <script setup>
-import { computed, watch } from "vue";
 import { languageController as lang } from "../../../controller/languageController";
 
 const props = defineProps({
-  timeData: {
-    type: Object,
-    default: null,
+  checkIn: {
+    type: Date,
+    required: true,
   },
-  formData: {
-    type: Object,
-    default: null,
-  },
-  lang: {
-    type: Object,
-    default: null,
+  checkOut: {
+    type: Date,
+    required: true,
   },
   bookingType: {
     type: String,
@@ -64,47 +59,40 @@ const props = defineProps({
   },
 });
 
-const emit = defineEmits(["update:timeData", "update:formData"]);
+const emit = defineEmits(["update:time"]);
 
-// Initialize language manager with provided lang or default
-watch(
-  () => props.lang,
-  (newLang) => {
-    if (newLang) {
-      lang.setLanguage(newLang);
-    }
-  },
-  { immediate: true },
-);
+const calculateDurations = (checkInDate, checkOutDate) => {
+  if (!checkInDate || !checkOutDate) return { totalHour: 0, totalDay: 0 };
 
-// If no lang prop provided, use default langVN
-if (!props.lang) {
-  lang.setLanguage(lang);
-}
+  const diffMs = checkOutDate - checkInDate;
+  const totalHour = Math.ceil(diffMs / (1000 * 60 * 60));
+  const totalDay = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
 
-// Support both timeData and formData props
-const data = computed(() => props.formData || props.timeData);
+  return { totalHour, totalDay };
+};
 
 const updateCheckIn = (value) => {
-  if (props.formData) {
-    emit("update:formData", { ...props.formData, checkIn: value });
-  } else {
-    emit("update:timeData", { ...props.timeData, checkIn: value });
-  }
+  const durations = calculateDurations(value, props.checkOut);
+  emit("update:time", {
+    checkIn: value,
+    checkOut: props.checkOut,
+    ...durations,
+  });
 };
 
 const updateCheckOut = (value) => {
-  if (props.formData) {
-    emit("update:formData", { ...props.formData, checkOut: value });
-  } else {
-    emit("update:timeData", { ...props.timeData, checkOut: value });
-  }
+  const durations = calculateDurations(props.checkIn, value);
+  emit("update:time", {
+    checkIn: props.checkIn,
+    checkOut: value,
+    ...durations,
+  });
 };
 
 const setQuickDuration = (value, unit) => {
-  if (!data.value?.checkIn) return;
+  if (!props.checkIn) return;
 
-  const checkOutDate = new Date(data.value.checkIn);
+  const checkOutDate = new Date(props.checkIn);
 
   if (unit === "hour") {
     checkOutDate.setHours(checkOutDate.getHours() + value);
@@ -112,29 +100,13 @@ const setQuickDuration = (value, unit) => {
     checkOutDate.setDate(checkOutDate.getDate() + value);
   }
 
-  if (props.formData) {
-    emit("update:formData", { ...props.formData, checkOut: checkOutDate });
-  } else {
-    emit("update:timeData", { ...props.timeData, checkOut: checkOutDate });
-  }
+  const durations = calculateDurations(props.checkIn, checkOutDate);
+  emit("update:time", {
+    checkIn: props.checkIn,
+    checkOut: checkOutDate,
+    ...durations,
+  });
 };
-
-const stayDuration = computed(() => {
-  const timeData = data.value;
-  if (!timeData?.checkIn || !timeData?.checkOut) return null;
-  const checkIn = new Date(timeData.checkIn);
-  const checkOut = new Date(timeData.checkOut);
-  const diffMs = checkOut - checkIn;
-  const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-  const diffDays = Math.floor(diffHours / 24);
-  const remainingHours = diffHours % 24;
-
-  if (diffDays > 0) {
-    return `${diffDays} ngày ${remainingHours} giờ`;
-  } else {
-    return `${diffHours} giờ`;
-  }
-});
 
 const formatDateTimeLocal = (value) => {
   if (!value || !(value instanceof Date)) return "";

@@ -13,7 +13,7 @@ export const langVN = {
     services: "🎯 Quản lý dịch vụ",
   },
 
-  createBooking: {
+  booking: {
     title: "Thêm đặt phòng mới",
     roomType: "Loại phòng",
     bookingType: "Loại đặt phòng",
@@ -25,13 +25,8 @@ export const langVN = {
     dailyPrice: "Giá theo ngày",
     roomInfo: "Thông tin phòng",
     createButton: "Book phòng",
-    totalPrice: "Tổng giá",
-    pricePerUnit: "Đơn giá",
     quickHour: "{hour} giờ",
     quickDay: "{day} ngày",
-  },
-
-  booking: {
     pricingInfo: "Thông tin giá",
     stayDuration: "Thời gian lưu trú",
     pricePerUnit: "Giá trên đơn vị (VND)",
@@ -141,6 +136,7 @@ export const langVN = {
     title: "📋 Quản lý đặt phòng",
     addBooking: "+ Thêm đặt phòng",
     addBookingTitle: "Thêm đặt phòng mới",
+    detailsTitle: "Chi tiết đặt phòng",
     guestName: "Tên khách hàng",
     roomNumber: "Số phòng",
     checkIn: "Ngày nhận",
@@ -161,6 +157,9 @@ export const langVN = {
     guest: "Khách hàng",
     room: "Phòng",
     status: "Trạng thái",
+    timeline: "Lịch sử đặt phòng",
+    notFound: "Không tìm thấy đặt phòng",
+    loadError: "Lỗi tải dữ liệu đặt phòng",
   },
 
   // Services
@@ -197,5 +196,11 @@ export const langVN = {
     cancel: "Hủy",
     day: "ngày",
     hour: "giờ",
+    close: "Đóng",
+    saveChanges: "Lưu thay đổi",
+    loading: "Đang tải dữ liệu...",
+    status: "Trạng thái",
+    saveSuccess: "Lưu thành công!",
+    saveError: "Lỗi lưu dữ liệu: ",
   },
 };

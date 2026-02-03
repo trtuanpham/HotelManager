@@ -1,10 +1,10 @@
 <template>
-  <ModalBase :is-visible="isVisible" modal-id="booking-details-modal" title="Chi tiết đặt phòng" @close="closeModal">
+  <ModalBase :is-visible="isVisible" modal-id="booking-details-modal" :title="lang.get('bookings.detailsTitle')" @close="closeModal">
     <div class="modal-body">
       <!-- Loading State -->
       <div v-if="isLoading" class="loading-state">
         <div class="loading-spinner"></div>
-        <p>Đang tải dữ liệu...</p>
+        <p>{{ lang.get("common.loading") }}</p>
       </div>
 
       <!-- Error State -->
@@ -19,8 +19,8 @@
 
         <!-- Check-in/Check-out Section -->
         <div class="details-section">
-          <h4 class="section-title">Thời gian lưu trú</h4>
-          <TimeDurationPicker :time-data="editTimeData" :booking-type="booking.bookingType" @update:time-data="handleTimeDataUpdate" />
+          <h4 class="section-title">{{ lang.get("booking.stayDuration") }}</h4>
+          <TimeDurationPicker :check-in="editTimeData.checkIn" :check-out="editTimeData.checkOut" :booking-type="booking.bookingType" @update:time="handleTimeUpdate" />
         </div>
 
         <!-- Pricing Section -->
@@ -42,13 +42,13 @@
 
         <!-- Booking Timeline Section -->
         <div class="details-section">
-          <h4 class="section-title">Lịch sử đặt phòng</h4>
+          <h4 class="section-title">{{ lang.get("bookings.timeline") }}</h4>
           <BookingTimelineSection :booking="booking" />
         </div>
 
         <!-- Status Section -->
         <div class="details-section">
-          <h4 class="section-title">Trạng thái</h4>
+          <h4 class="section-title">{{ lang.get("common.status") }}</h4>
           <div class="status-display">
             <span :class="`status-badge ${booking.status?.toLowerCase()}`">{{ booking.status }}</span>
           </div>
@@ -58,8 +58,8 @@
 
     <template #footer>
       <div class="modal-footer">
-        <button class="btn btn-secondary" @click="closeModal">Đóng</button>
-        <button class="btn btn-primary" :disabled="!hasChanges" @click="saveChanges">Lưu thay đổi</button>
+        <button class="btn btn-secondary" @click="closeModal">{{ lang.get("common.close") }}</button>
+        <button class="btn btn-primary" :disabled="!hasChanges" @click="saveChanges">{{ lang.get("common.saveChanges") }}</button>
       </div>
     </template>
   </ModalBase>
@@ -70,6 +70,7 @@
 <script setup>
 import { ref, computed } from "vue";
 import { hotelStore as store } from "../../stores/hotelStore";
+import { languageController as lang } from "../../controller/languageController";
 import { DEFAULT_AVATAR_SVG } from "../../data/constants";
 import { getBookingById } from "../../services/bookingService";
 import ModalBase from "./ModalBase.vue";
@@ -107,11 +108,6 @@ const mainGuestAvatarUrl = computed(() => {
   return mainGuest.value?.imageUrl || DEFAULT_AVATAR_SVG;
 });
 
-const selectedRoom = computed(() => {
-  if (!booking.value) return null;
-  return store.rooms.find((r) => r.number === booking.value.roomNumber);
-});
-
 const accompaniedGuests = computed(() => {
   if (!booking.value || !booking.value.guestIds || booking.value.guestIds.length <= 1) return [];
   const mainGuestId = booking.value.guestIds[0];
@@ -124,11 +120,6 @@ const accompaniedGuests = computed(() => {
 const availableGuests = computed(() => {
   if (!booking.value) return store.guests;
   return store.guests.filter((g) => !booking.value.guestIds.includes(g.id));
-});
-
-const totalPrepaid = computed(() => {
-  if (!booking.value) return 0;
-  return store.getTotalPrepaidByBookingId(booking.value.id);
 });
 
 const hasChanges = computed(() => {
@@ -147,7 +138,7 @@ const openModal = async (bookingId) => {
   try {
     const bookingData = await getBookingById(bookingId);
     if (!bookingData) {
-      throw new Error("Không tìm thấy đặt phòng");
+      throw new Error(lang.get("bookings.notFound"));
     }
 
     booking.value = bookingData;
@@ -160,7 +151,7 @@ const openModal = async (bookingId) => {
       pricePerUnit: bookingData.pricePerUnit || 0,
     };
   } catch (err) {
-    error.value = err.message || "Lỗi tải dữ liệu đặt phòng";
+    error.value = err.message || lang.get("bookings.loadError");
     booking.value = null;
   } finally {
     isLoading.value = false;
@@ -195,9 +186,9 @@ const saveChanges = () => {
     // Update original booking for change detection
     originalBooking.value = { ...booking.value };
 
-    alert("Lưu thành công!");
+    alert(lang.get("common.saveSuccess"));
   } catch (err) {
-    alert("Lỗi lưu dữ liệu: " + err.message);
+    alert(lang.get("common.saveError") + err.message);
   }
 };
 
@@ -216,21 +207,13 @@ const removeGuest = (guestId) => {
   }
 };
 
-const saveTimeChanges = () => {
-  if (!booking.value || !editTimeData.value.checkIn || !editTimeData.value.checkOut) {
-    return;
-  }
-
-  const checkInStr = editTimeData.value.checkIn.toISOString();
-  const checkOutStr = editTimeData.value.checkOut.toISOString();
-
-  booking.value.checkIn = checkInStr;
-  booking.value.checkOut = checkOutStr;
-  booking.value.pricePerUnit = editPriceData.value.pricePerUnit;
-};
-
-const handleTimeDataUpdate = (newTimeData) => {
-  editTimeData.value = { ...newTimeData };
+const handleTimeUpdate = (timeData) => {
+  editTimeData.value = {
+    checkIn: timeData.checkIn,
+    checkOut: timeData.checkOut,
+  };
+  booking.value.checkIn = timeData.checkIn.toISOString();
+  booking.value.checkOut = timeData.checkOut.toISOString();
 };
 
 const submitPrepayment = () => {
