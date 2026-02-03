@@ -30,15 +30,7 @@
         <PrepaymentSection :booking="booking" @submit-prepayment="submitPrepayment" />
 
         <!-- Guest Info Section -->
-        <GuestInfoSection
-          :main-guest="mainGuest"
-          :main-guest-name="mainGuestName"
-          :main-guest-avatar-url="mainGuestAvatarUrl"
-          :accompanied-guests="accompaniedGuests"
-          :available-guests="availableGuests"
-          @add-guest="addGuest"
-          @remove-guest="removeGuest"
-        />
+        <GuestInfoSection :booking="booking" />
 
         <!-- Booking Timeline Section -->
         <div class="details-section">
@@ -176,22 +168,12 @@ const saveChanges = async () => {
   }
 };
 
-const addGuest = (guest) => {
-  if (!booking.value) return;
-  if (!booking.value.guestIds.includes(guest.id)) {
-    booking.value.guestIds.push(guest.id);
-  }
-};
-
-const removeGuest = (guestId) => {
-  if (!booking.value) return;
-  const index = booking.value.guestIds.indexOf(guestId);
-  if (index > -1) {
-    booking.value.guestIds.splice(index, 1);
-  }
-};
-
 const handleTimeUpdate = (timeData) => {
+  if (!timeData || !timeData.checkIn || !timeData.checkOut) {
+    console.warn("Invalid time data:", timeData);
+    return;
+  }
+
   booking.value.checkIn = timeData.checkIn.toISOString();
   booking.value.checkOut = timeData.checkOut.toISOString();
   console.log("Time updated:", timeData);
@@ -271,16 +253,15 @@ defineExpose({
   display: grid;
   grid-template-columns: 1fr;
   gap: 20px;
+  grid-auto-rows: auto;
+  align-content: start;
 }
 
 @media (min-width: 768px) {
   .booking-details {
     grid-template-columns: repeat(2, 1fr);
-  }
-
-  .details-section:nth-child(4),
-  .details-section:nth-child(3) {
-    grid-column: 1;
+    align-items: start;
+    justify-items: stretch;
   }
 }
 
@@ -306,6 +287,8 @@ defineExpose({
   color: #667eea;
   text-transform: uppercase;
   letter-spacing: 0.5px;
+  display: inline-block;
+  line-height: 1;
 }
 
 .info-grid.small-grid {

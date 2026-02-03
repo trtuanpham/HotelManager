@@ -31,6 +31,8 @@ export const langVN = {
     stayDuration: "Thời gian lưu trú",
     pricePerUnit: "Giá trên đơn vị (VND)",
     totalPrice: "Thành tiền",
+    guestTitleInfo: "Thông tin khách hàng",
+    noGuests: "Chưa có khách hàng",
   },
 
   // Dashboard

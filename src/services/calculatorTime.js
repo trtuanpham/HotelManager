@@ -2,7 +2,7 @@ import { DEFAULT_CHECK_IN_HOUR, DEFAULT_CHECK_IN_MINUTE, DEFAULT_CHECK_OUT_HOUR,
 
 /**
  * Calculate number of hours with rounding rules
- * < 30 minutes: no charge, >= 30 minutes: charge as 1 additional hour
+ * Rule: If remaining time > 30 minutes, count as 1 additional hour
  * @param {Date} checkIn - Check-in date/time
  * @param {Date} checkOut - Check-out date/time
  * @returns {number} Number of hours (rounded)
@@ -10,12 +10,10 @@ import { DEFAULT_CHECK_IN_HOUR, DEFAULT_CHECK_IN_MINUTE, DEFAULT_CHECK_OUT_HOUR,
 export const calculateBookingHours = (checkIn, checkOut) => {
   if (!checkIn || !checkOut) return 0;
   const timeDiff = checkOut - checkIn;
-  console.log("Time difference in ms:", checkIn, checkOut, timeDiff);
   const totalHours = timeDiff / (1000 * 60 * 60);
 
-  // Round hours according to rules
-  const roundedHours = Math.ceil(totalHours);
-  return roundedHours;
+  // Round to nearest hour: > 30 minutes rounds up, <= 30 minutes rounds down
+  return Math.round(totalHours);
 };
 
 /**
@@ -31,55 +29,26 @@ export const calculateBookingDays = (checkIn, checkOut) => {
 
   // Calculate full 24-hour periods
   const fullDays = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
-
+  console.log("Full days:", fullDays);
   // Get remaining time after full days
-  const remainingMs = timeDiff % (1000 * 60 * 60 * 24);
+  const totalHours = calculateBookingHours(checkIn, checkOut);
+  if (fullDays <= 0) {
+    console.log("Total hours for exact days:", totalHours);
+    if (totalHours >= 4 && totalHours < 12) {
+      return 1;
+    }
+  }
 
   // Get checkout hour
-  const checkOutHour = checkOut.getHours();
+  const checkOutMinute = checkOut.getMinutes();
+  const checkOutHour = checkOutMinute < 30 ? checkOut.getHours() : checkOut.getHours() + 1;
+  console.log("Check-out time:", checkOutHour + ":" + checkOutMinute);
 
   // If there's remaining time and checkout is after 13:00, add 1 day
-  if (remainingMs > 0 && checkOutHour >= 13) {
+  if (checkOutHour >= 13 && totalHours > 4) {
     return fullDays + 1;
   }
 
-  // If there's remaining time but checkout is before 13:00, just return full days
-  if (remainingMs > 0) {
-    return fullDays;
-  }
-
   // If no remaining time (exactly N full days), return those days, minimum 1
-  return fullDays > 0 ? fullDays : 1;
-};
-
-/**
- * Get default check-in time for today
- * @returns {Date} Check-in Date object with default time
- */
-export const getDefaultCheckInTime = () => {
-  const checkInDate = new Date();
-  checkInDate.setHours(DEFAULT_CHECK_IN_HOUR, DEFAULT_CHECK_IN_MINUTE, 0, 0);
-  return checkInDate;
-};
-
-/**
- * Get default check-out time for next day
- * @returns {Date} Check-out Date object (next day at default time)
- */
-export const getDefaultCheckOutTime = () => {
-  const checkOutDate = new Date();
-  checkOutDate.setDate(checkOutDate.getDate() + 1);
-  checkOutDate.setHours(DEFAULT_CHECK_OUT_HOUR, DEFAULT_CHECK_OUT_MINUTE, 0, 0);
-  return checkOutDate;
-};
-
-/**
- * Calculate total price based on duration and rate
- * @param {number} duration - Number of hours or nights
- * @param {number} ratePerUnit - Price per hour or per night
- * @returns {number} Total price
- */
-export const calculateTotalPrice = (duration, ratePerUnit) => {
-  if (!duration || !ratePerUnit) return 0;
-  return duration * ratePerUnit;
+  return fullDays;
 };

@@ -61,6 +61,8 @@ const props = defineProps({
   },
 });
 
+let bookingType = props.bookingType;
+
 const emit = defineEmits(["update:time"]);
 
 const calculateDurations = (checkInDate, checkOutDate) => {
@@ -77,17 +79,25 @@ const updateCheckIn = (value) => {
   emit("update:time", {
     checkIn: value,
     checkOut: props.checkOut,
-    bookingType: props.bookingType,
+    bookingType: bookingType,
     ...durations,
   });
 };
 
 const updateCheckOut = (value) => {
   const durations = calculateDurations(props.checkIn, value);
+  console.log("Updating check-out:", value, "Durations:", durations);
+  let bookingType = props.bookingType;
+  if (durations.totalDay > 0) {
+    bookingType = BOOKING_TYPES.DAILY;
+  } else {
+    bookingType = BOOKING_TYPES.HOURLY;
+  }
+
   emit("update:time", {
     checkIn: props.checkIn,
     checkOut: value,
-    bookingType: props.bookingType,
+    bookingType: bookingType,
     ...durations,
   });
 };
@@ -99,17 +109,17 @@ const setQuickDuration = (value, unit) => {
 
   if (unit === BOOKING_TYPES.HOURLY) {
     checkOutDate.setHours(checkOutDate.getHours() + value);
-    props.bookingType = BOOKING_TYPES.HOURLY;
+    bookingType = BOOKING_TYPES.HOURLY;
   } else if (unit === BOOKING_TYPES.DAILY) {
     checkOutDate.setDate(checkOutDate.getDate() + value);
-    props.bookingType = BOOKING_TYPES.DAILY;
+    bookingType = BOOKING_TYPES.DAILY;
   }
 
   const durations = calculateDurations(props.checkIn, checkOutDate);
   emit("update:time", {
     checkIn: props.checkIn,
     checkOut: checkOutDate,
-    bookingType: props.bookingType,
+    bookingType: bookingType,
     ...durations,
   });
 };

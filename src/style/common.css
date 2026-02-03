@@ -2,7 +2,7 @@
 .form-row {
     display: flex;
     gap: 12px;
-    margin-bottom: 18px;
+    /* margin-bottom: 18px; */
 }
 
 .form-row .form-group {

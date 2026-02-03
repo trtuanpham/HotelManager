@@ -156,8 +156,8 @@
 import { ref, computed, watch } from "vue";
 import { hotelStore as store } from "../../stores/hotelStore";
 import { langVN as lang } from "../../locales/vi";
-import { DEFAULT_CHECK_IN_HOUR, DEFAULT_CHECK_IN_MINUTE, DEFAULT_CHECK_OUT_HOUR, DEFAULT_CHECK_OUT_MINUTE, BOOKING_TYPES, DEFAULT_AVATAR_SVG } from "../../data/constants";
-import { getDefaultCheckInTime, getDefaultCheckOutTime, calculateBookingHours, calculateBookingDays, calculateTotalPrice } from "../../services/calculatorTime";
+import { BOOKING_TYPES, DEFAULT_AVATAR_SVG } from "../../data/constants";
+import { calculateBookingHours, calculateBookingDays } from "../../services/calculatorTime";
 import { searchGuests, getTopGuests } from "../../services/guestService";
 import { getRoomByNumber } from "../../services/roomService";
 import ModalBase from "./ModalBase.vue";
@@ -290,11 +290,7 @@ const numberOfHours = computed(() => {
 });
 
 const calculatedTotalPrice = computed(() => {
-  if (formData.value.bookingType === BOOKING_TYPES.HOURLY) {
-    return calculateTotalPrice(numberOfHours.value, formData.value.pricePerUnit);
-  } else {
-    return calculateTotalPrice(numberOfNights.value, formData.value.pricePerUnit);
-  }
+  return formData.value.pricePerUnit * numberOfHours.value;
 });
 
 const guestAvatarUrl = computed(() => {
@@ -309,7 +305,6 @@ const openModal = (roomNumber) => {
   // add 1 day for default check-out
   const checkOutDate = new Date();
   checkOutDate.setDate(checkInDate.getDate() + 1);
-  checkOutDate.setHours(DEFAULT_CHECK_IN_HOUR, DEFAULT_CHECK_IN_MINUTE, 0, 0);
 
   formData.value = {
     roomNumber,

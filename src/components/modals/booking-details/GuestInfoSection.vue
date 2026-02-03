@@ -1,28 +1,10 @@
 <template>
   <div class="details-section">
     <div class="accompanied-header">
-      <h4 class="section-title">Thông tin khách hàng</h4>
-      <div class="guest-search-box">
-        <input
-          v-model="guestSearchQuery"
-          type="text"
-          class="guest-search-input"
-          placeholder="Thêm khách..."
-          @input="handleGuestSearchInput(guestSearchQuery)"
-          @focus="handleGuestSearchFocus"
-          @blur="handleGuestSearchBlur"
-          @keydown.esc="showGuestDropdown = false"
-        />
-        <div v-show="showGuestDropdown" class="guest-dropdown">
-          <div v-if="filteredGuests.length === 0" class="dropdown-empty">Không tìm thấy khách hàng</div>
-          <div v-for="guest in filteredGuests" :key="guest.id" class="dropdown-item" @click="addGuest(guest)">
-            <div class="dropdown-guest-info">
-              <div class="guest-name">{{ guest.name }}</div>
-              <small class="guest-citizen-id">ID: {{ guest.citizenId }}</small>
-            </div>
-          </div>
-        </div>
-      </div>
+      <h4 class="section-title">{{ lang.get("booking.guestTitleInfo") }}</h4>
+      <button class="edit-toggle-btn" @click="isEditMode = !isEditMode">
+        {{ isEditMode ? lang.get("common.close") : lang.get("common.edit") }}
+      </button>
     </div>
 
     <div class="guests-grid">
@@ -44,53 +26,39 @@
             <div class="guest-card-name">{{ getGuestName(guestId) }}</div>
             <small class="guest-card-detail">ID: {{ getGuestCitizenId(guestId) }}</small>
           </div>
-          <button type="button" class="remove-btn" @click="removeGuest(guestId)">×</button>
+          <button v-if="isEditMode" type="button" class="remove-btn" @click="removeGuest(guestId)">×</button>
         </div>
       </template>
     </div>
 
-    <div v-if="accompaniedGuestIds.length === 0 && !isLoadingGuests" class="empty-message">Chưa có khách hàng</div>
+    <div v-if="accompaniedGuestIds.length === 0 && !isLoadingGuests" class="empty-message">{{ lang.get("booking.noGuests") }}</div>
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted, watch, computed } from "vue";
+import { languageController as lang } from "../../../controller/languageController";
 import { DEFAULT_AVATAR_SVG } from "../../../data/constants";
 import { getAllGuests, getGuestById } from "../../../services/guestService";
 
 const props = defineProps({
-  mainGuest: {
+  booking: {
     type: Object,
-    default: null,
-  },
-  mainGuestName: {
-    type: String,
-    required: true,
-  },
-  mainGuestAvatarUrl: {
-    type: String,
-    required: true,
-  },
-  accompaniedGuests: {
-    type: Array,
-    required: true,
-  },
-  availableGuests: {
-    type: Array,
     required: true,
   },
 });
 
-const emit = defineEmits(["add-guest", "remove-guest"]);
+const emit = defineEmits(["remove-guest"]);
 
-const guestSearchQuery = ref("");
-const showGuestDropdown = ref(false);
-const filteredGuests = ref([]);
+const isEditMode = ref(false);
 const isLoadingGuests = ref(false);
 const loadedGuestData = ref({});
 
-// Computed property to get guest IDs
-const accompaniedGuestIds = computed(() => props.accompaniedGuests.map((g) => g.id));
+// Computed property to get accompanied guest IDs (all except first/main guest)
+const accompaniedGuestIds = computed(() => {
+  if (!props.booking?.guestIds || props.booking.guestIds.length <= 1) return [];
+  return props.booking.guestIds.slice(1);
+});
 
 // Load detailed guest data for each accompanied guest
 const loadGuestDetails = async (guestId) => {
@@ -119,32 +87,6 @@ const getGuestData = (guestId) => {
   const data = loadedGuestData.value[guestId];
   console.log("Getting guest data for", guestId, ":", data);
   return data;
-};
-
-const handleGuestSearchInput = (query) => {
-  if (!query) {
-    filteredGuests.value = props.availableGuests;
-  } else {
-    filteredGuests.value = props.availableGuests.filter((g) => g.name.toLowerCase().includes(query.toLowerCase()) || g.citizenId.includes(query));
-  }
-};
-
-const handleGuestSearchFocus = () => {
-  showGuestDropdown.value = true;
-  handleGuestSearchInput(guestSearchQuery.value);
-};
-
-const handleGuestSearchBlur = () => {
-  setTimeout(() => {
-    showGuestDropdown.value = false;
-  }, 200);
-};
-
-const addGuest = (guest) => {
-  emit("add-guest", guest);
-  guestSearchQuery.value = "";
-  showGuestDropdown.value = false;
-  filteredGuests.value = [];
 };
 
 const removeGuest = (guestId) => {
@@ -180,14 +122,14 @@ onMounted(async () => {
 
 // Watch for changes in accompanied guests and load their details
 watch(
-  () => props.accompaniedGuests,
-  async (newGuests) => {
-    if (!newGuests || newGuests.length === 0) return;
+  () => accompaniedGuestIds.value,
+  async (newGuestIds) => {
+    if (!newGuestIds || newGuestIds.length === 0) return;
 
-    console.log("Loading guest details for:", newGuests);
-    for (const guest of newGuests) {
-      console.log("Loading guest:", guest.id);
-      await loadGuestDetails(guest.id);
+    console.log("Loading guest details for:", newGuestIds);
+    for (const guestId of newGuestIds) {
+      console.log("Loading guest:", guestId);
+      await loadGuestDetails(guestId);
     }
   },
   { immediate: true, deep: true },
@@ -220,84 +162,21 @@ watch(
   white-space: nowrap;
 }
 
-.guest-search-box {
-  position: relative;
-  flex: 1;
-  max-width: 250px;
-}
-
-.guest-search-input {
-  width: 100%;
-  padding: 6px 10px;
-  border: 1px solid #1988ff;
-  border-radius: 4px;
-  font-size: 12px;
-  box-sizing: border-box;
-  transition: border-color 0.2s;
-}
-
-.guest-search-input:focus {
-  outline: none;
-  border-color: #667eea;
-  box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1);
-}
-
-.guest-dropdown {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  right: 0;
-  background: white;
-  border: 1px solid #1988ff;
-  border-top: none;
-  border-radius: 0 0 4px 4px;
-  max-height: 200px;
-  overflow-y: auto;
-  z-index: 1000;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  margin-top: -1px;
-}
-
-.dropdown-empty {
-  padding: 8px 10px;
-  text-align: center;
-  color: #9ca3af;
-  font-size: 11px;
-}
-
-.dropdown-item {
-  padding: 8px 10px;
-  cursor: pointer;
-  border-bottom: 1px solid #e5e7eb;
-  transition: all 0.15s;
-  font-size: 12px;
-  color: #374151;
-  background: white;
-}
-
-.dropdown-item:last-child {
-  border-bottom: none;
-}
-
-.dropdown-item:hover {
+.edit-toggle-btn {
+  padding: 6px 12px;
   background: #667eea;
   color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
 }
 
-.dropdown-guest-info {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.dropdown-guest-info .guest-name {
-  font-size: 12px;
-  font-weight: 500;
-}
-
-.dropdown-guest-info .guest-citizen-id {
-  font-size: 10px;
-  opacity: 0.8;
+.edit-toggle-btn:hover {
+  background: #5568d3;
 }
 
 .guests-grid {

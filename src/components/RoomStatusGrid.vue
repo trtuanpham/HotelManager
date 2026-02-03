@@ -134,7 +134,7 @@ const handleRoomCardClick = async (room) => {
 }
 
 .room-group {
-  margin-bottom: 30px;
+  /* margin-bottom: 30px; */
 }
 
 .group-title {
