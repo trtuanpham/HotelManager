@@ -59,7 +59,7 @@
     <template #footer>
       <div class="modal-footer">
         <button class="btn btn-secondary" @click="closeModal">{{ lang.get("common.close") }}</button>
-        <button class="btn btn-primary" :disabled="!hasChanges" @click="saveChanges">{{ lang.get("common.saveChanges") }}</button>
+        <button v-if="!isLoading" class="btn btn-primary" :disabled="!hasChanges" @click="saveChanges">{{ lang.get("common.saveChanges") }}</button>
       </div>
     </template>
   </ModalBase>
