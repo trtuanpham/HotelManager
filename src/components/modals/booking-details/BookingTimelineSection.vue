@@ -2,7 +2,7 @@
   <!-- Loading State -->
   <div v-if="isLoading" class="timeline-loading">
     <div class="loading-spinner"></div>
-    <p>Đang tải lịch sử...</p>
+    <p>{{ lang.get("bookings.timelineLoading") }}</p>
   </div>
 
   <!-- Error State -->
@@ -12,7 +12,7 @@
 
   <!-- Empty State -->
   <div v-else-if="timelineEvents.length === 0" class="timeline-empty">
-    <p>Không có sự kiện nào</p>
+    <p>{{ lang.get("bookings.timelineEmpty") }}</p>
   </div>
 
   <!-- Timeline -->
@@ -25,7 +25,7 @@
         <div class="timeline-content">
           <div class="timeline-time">{{ formatDate(event.date) }}</div>
           <div class="timeline-title">{{ event.title }}</div>
-          <div v-if="event.description" class="timeline-description">{{ event.description }}</div>
+          <div v-if="event.description" class="timeline-description" v-html="event.description.replace(/\n/g, '<br>')"></div>
           <div v-if="event.amount" class="timeline-amount" :class="`amount-${event.amountType}`">
             {{ formatAmount(event.amount) }}
           </div>
@@ -37,7 +37,7 @@
     <div v-if="hasMoreEvents" class="load-more-container">
       <button @click="loadMore" class="load-more-btn" :disabled="isLoadingMore">
         <span v-if="isLoadingMore" class="load-more-spinner"></span>
-        <span>{{ isLoadingMore ? "Đang tải..." : `Xem thêm (${currentPage}/${totalPages})` }}</span>
+        <span>{{ isLoadingMore ? lang.get("common.loading") : `${lang.get("bookings.timelineViewMore")} (${currentPage}/${totalPages})` }}</span>
       </button>
     </div>
   </div>
@@ -47,6 +47,7 @@
 import { computed, ref, onMounted } from "vue";
 import { getBookingEventsByBookingId, getBookingEventsByBookingIdPaginated } from "../../../services/bookingEventService";
 import { BOOKING_EVENT_ICONS, BOOKING_EVENT_COLORS } from "../../../data/constants";
+import { languageController as lang } from "../../../controller/languageController";
 
 const props = defineProps({
   booking: {
@@ -166,7 +167,7 @@ const formatAmount = (amount) => {
 
 const getEventIconPath = (type) => {
   const iconName = BOOKING_EVENT_ICONS[type];
-  return new URL(`../assets/${iconName}`, import.meta.url).href;
+  return new URL(`../../../assets/${iconName}`, import.meta.url).href;
 };
 
 const getMarkerStyle = (type) => {
@@ -176,6 +177,19 @@ const getMarkerStyle = (type) => {
     borderColor: color,
   };
 };
+
+/**
+ * Add event locally to timeline (without API call)
+ * Used when event is created and we want to show it immediately
+ */
+const addEventLocal = (eventData) => {
+  // Add to beginning of events array (newest first)
+  events.value.unshift(eventData);
+};
+
+defineExpose({
+  addEventLocal,
+});
 </script>
 
 <style scoped>
@@ -309,7 +323,7 @@ const getMarkerStyle = (type) => {
 
 .timeline-time {
   font-size: 12px;
-  color: #9ca3af;
+  color: #667eea;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -327,6 +341,9 @@ const getMarkerStyle = (type) => {
   font-size: 12px;
   color: #6b7280;
   margin-bottom: 6px;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
 }
 
 .timeline-amount {

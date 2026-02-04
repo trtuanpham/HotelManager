@@ -151,7 +151,6 @@ export const hotelStore = reactive({
       paymentDate: "2026-01-15 10:30",
       paymentMethod: "Chuyển khoản",
       description: "Trả tiền trước 50%",
-      status: "Completed",
     },
     {
       id: 2,
@@ -160,7 +159,6 @@ export const hotelStore = reactive({
       paymentDate: "2026-01-18 14:15",
       paymentMethod: "Tiền mặt",
       description: "Trả tiền trước 30%",
-      status: "Completed",
     },
     {
       id: 3,
@@ -169,7 +167,6 @@ export const hotelStore = reactive({
       paymentDate: "2026-01-20 09:00",
       paymentMethod: "Thẻ tín dụng",
       description: "Trả tiền trước 50%",
-      status: "Completed",
     },
     {
       id: 4,
@@ -178,7 +175,6 @@ export const hotelStore = reactive({
       paymentDate: "2026-01-28 16:45",
       paymentMethod: "Chuyển khoản",
       description: "Trả tiền trước 33%",
-      status: "Pending",
     },
   ],
 
@@ -186,67 +182,87 @@ export const hotelStore = reactive({
   bookingEvents: [
     // Booking 1 events
     {
-      id: 1,
+      id: "booking_event_1",
       bookingId: "booking_1",
       type: "booking_created",
       title: "Khách đặt phòng",
       description: "Đặt phòng 8001",
       date: "2025-12-01 06:00",
-      amount: null,
     },
     {
-      id: 2,
+      id: "booking_event_2",
       bookingId: "booking_1",
       type: "payment",
       title: "Khách trả tiền mặt",
-      description: "Trả tiền trước",
+      description: "Trả tiền trước 500,000 VND",
       date: "2025-12-01 06:01",
-      amount: 5000000,
     },
     {
-      id: 3,
+      id: "booking_event_3",
       bookingId: "booking_1",
       type: "checkin",
       title: "Khách check-in",
       description: "Check-in phòng 8001",
       date: "2025-12-01 06:02",
-      amount: null,
     },
     {
-      id: 4,
+      id: "booking_event_4",
       bookingId: "booking_1",
       type: "service_used",
       title: "Khách dùng dịch vụ Nước ngọt",
-      description: "Chưa thanh toán",
+      description: "Giá 40,000 VND",
       date: "2025-12-01 08:00",
-      amount: 40000,
     },
     {
-      id: 5,
+      id: "booking_event_5",
       bookingId: "booking_1",
       type: "checkout",
       title: "Khách check-out",
       description: "Check-out phòng 8001",
       date: "2025-12-02 06:00",
-      amount: null,
     },
     {
-      id: 6,
+      id: "booking_event_6",
       bookingId: "booking_1",
       type: "payment",
       title: "Khách thanh toán dịch vụ",
-      description: "Trả tiền dịch vụ",
+      description: "Trả tiền dịch vụ 40,000 VND",
       date: "2025-12-02 06:01",
-      amount: 40000,
     },
     {
-      id: 7,
+      id: "booking_event_7",
       bookingId: "booking_1",
       type: "booking_completed",
       title: "Đặt phòng hoàn tất",
       description: "Tất cả các khoản thanh toán đã xong",
       date: "2025-12-02 06:02",
-      amount: null,
+    },
+    // Booking 2 events
+    {
+      id: "booking_event_8",
+      bookingId: "booking_2",
+      type: "booking_created",
+      title: "Khách đặt phòng",
+      description: "Đặt phòng 8301",
+      date: "2025-12-05 09:00",
+    },
+    {
+      id: "booking_event_9",
+      bookingId: "booking_2",
+      type: "payment",
+      title: "Khách trả tiền chuyển khoản",
+      description: "Nội dung: Trả tiền trước\nHình thức: Chuyển khoản\n Số tiền: 3,000,000 VND",
+      date: "2025-12-05 09:01",
+    },
+
+    // Booking 3 events
+    {
+      id: "booking_event_10",
+      bookingId: "booking_3",
+      type: "booking_created",
+      title: "Khách đặt phòng",
+      description: "Đặt phòng 9101",
+      date: "2025-12-10 11:00",
     },
   ],
 
@@ -371,7 +387,6 @@ export const hotelStore = reactive({
     const newPrepayment = {
       id: Math.max(...this.prepayments.map((p) => p.id), 0) + 1,
       ...prepayment,
-      status: prepayment.status || "Completed",
     };
     this.prepayments.push(newPrepayment);
     return newPrepayment;
@@ -400,7 +415,7 @@ export const hotelStore = reactive({
 
   // Tính tổng tiền trả trước theo bookingId
   getTotalPrepaidByBookingId(bookingId) {
-    return this.prepayments.filter((p) => p.bookingId === bookingId && p.status === "Completed").reduce((sum, p) => sum + p.amount, 0);
+    return this.prepayments.filter((p) => p.bookingId === bookingId).reduce((sum, p) => sum + p.amount, 0);
   },
 
   // Lấy danh sách sự kiện đặt phòng theo bookingId

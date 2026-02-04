@@ -33,6 +33,8 @@ export const langVN = {
     totalPrice: "Thành tiền",
     guestTitleInfo: "Thông tin khách hàng",
     noGuests: "Chưa có khách hàng",
+    confirmTitleRemoveGuest: "Xác nhận xóa khách",
+    confirmContentRemoveGuest: "Bạn có chắc chắn muốn xóa khách này?",
   },
 
   // Dashboard
@@ -160,8 +162,10 @@ export const langVN = {
     room: "Phòng",
     status: "Trạng thái",
     timeline: "Lịch sử đặt phòng",
+    timelineLoading: "Đang tải lịch sử...",
+    timelineEmpty: "Không có sự kiện nào",
+    timelineViewMore: "Xem thêm",
     notFound: "Không tìm thấy đặt phòng",
-    loadError: "Lỗi tải dữ liệu đặt phòng",
   },
 
   // Services
@@ -191,11 +195,36 @@ export const langVN = {
     confirmDone: "Đã xong",
   },
 
+  // Prepayments
+  prepayment: {
+    addTitle: "Thêm trả tiền trước",
+    amount: "Số tiền (VND)",
+    amountPlaceholder: "Nhập số tiền",
+    paymentDate: "Ngày thanh toán",
+    paymentMethod: "Phương thức thanh toán",
+    selectMethod: "Chọn phương thức",
+    cash: "Tiền mặt",
+    transfer: "Chuyển khoản",
+    card: "Thẻ tín dụng",
+    description: "Mô tả",
+    descriptionPlaceholder: "Ví dụ: Trả tiền trước 50%",
+    validationError: "Vui lòng điền đầy đủ thông tin trả tiền trước",
+  },
+
+  // Booking Events
+  bookingEvents: {
+    payment: "Khách trả tiền",
+    paymentDescription: "Nội dung",
+    paymentAmount: "Số tiền",
+    paymentMethod: "Thanh toán",
+  },
+
   // Common
   common: {
     edit: "Sửa",
     save: "Lưu",
     cancel: "Hủy",
+    delete: "Xóa",
     day: "ngày",
     hour: "giờ",
     close: "Đóng",
@@ -204,5 +233,8 @@ export const langVN = {
     status: "Trạng thái",
     saveSuccess: "Lưu thành công!",
     saveError: "Lỗi lưu dữ liệu: ",
+    error: "Lỗi",
+    confirm: "Xác nhận",
+    add: "Thêm",
   },
 };

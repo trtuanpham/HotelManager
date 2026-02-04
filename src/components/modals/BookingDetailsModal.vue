@@ -1,70 +1,76 @@
 <template>
-  <ModalBase :is-visible="isVisible" modal-id="booking-details-modal" :title="lang.get('bookings.detailsTitle')" @close="closeModal">
-    <div class="modal-body">
-      <!-- Loading State -->
-      <div v-if="isLoading" class="loading-state">
-        <div class="loading-spinner"></div>
-        <p>{{ lang.get("common.loading") }}</p>
-      </div>
-
-      <!-- Error State -->
-      <div v-else-if="error" class="error-state">
-        <p>⚠️ {{ error }}</p>
-      </div>
-
-      <!-- Content -->
-      <div v-else-if="booking" class="booking-details">
-        <!-- Room Info Section -->
-        <RoomInfoSection :booking-id="booking.id" />
-
-        <!-- Check-in/Check-out Section -->
-        <div class="details-section">
-          <h4 class="section-title">{{ lang.get("booking.stayDuration") }}</h4>
-          <TimeDurationPicker :check-in="new Date(booking.checkIn)" :check-out="new Date(booking.checkOut)" :booking-type="booking.bookingType" @update:time="handleTimeUpdate" />
+  <ModalBase :is-visible="isVisible" modal-id="booking-details-modal" @close="closeModal">
+    <template #title>
+      <h3>{{ lang.get("bookings.detailsTitle") }}</h3>
+    </template>
+    <template #content>
+      <template v-if="isLoading">
+        <div class="loading-state">
+          <div class="loading-spinner"></div>
+          <p>{{ lang.get("common.loading") }}</p>
         </div>
+      </template>
 
-        <!-- Pricing Section -->
-        <PricingSection :booking="booking" @update:pricePerUnit="handlePriceUpdate" />
-
-        <!-- Prepayment Section -->
-        <PrepaymentSection :booking="booking" @submit-prepayment="submitPrepayment" />
-
-        <!-- Guest Info Section -->
-        <GuestInfoSection :booking="booking" />
-
-        <!-- Booking Timeline Section -->
-        <div class="details-section">
-          <h4 class="section-title">{{ lang.get("bookings.timeline") }}</h4>
-          <BookingTimelineSection :booking="booking" />
+      <template v-else-if="error">
+        <div class="error-state">
+          <p>⚠️ {{ error }}</p>
         </div>
+      </template>
 
-        <!-- Status Section -->
-        <div class="details-section">
-          <h4 class="section-title">{{ lang.get("common.status") }}</h4>
-          <div class="status-display">
-            <span :class="`status-badge ${booking.status?.toLowerCase()}`">{{ booking.status }}</span>
+      <template v-else-if="booking">
+        <div class="booking-details">
+          <!-- Room Info Section -->
+          <RoomInfoSection :booking-id="booking.id" />
+
+          <!-- Guest Info Section -->
+          <GuestInfoSection :booking="booking" />
+
+          <!-- Check-in/Check-out Section -->
+          <div class="details-section">
+            <h4 class="section-title">{{ lang.get("booking.stayDuration") }}</h4>
+            <TimeDurationPicker :check-in="new Date(booking.checkIn)" :check-out="new Date(booking.checkOut)" :booking-type="booking.bookingType" @update:time="handleTimeUpdate" />
+          </div>
+
+          <!-- Pricing Section -->
+          <PricingSection :booking="booking" @update:pricePerUnit="handlePriceUpdate" />
+
+          <!-- Prepayment Section -->
+          <PrepaymentSection :booking="booking" @submit-prepayment="submitPrepayment" />
+
+          <!-- Status Section -->
+          <div class="details-section">
+            <h4 class="section-title">{{ lang.get("common.status") }}</h4>
+            <div class="status-display">
+              <span :class="`status-badge ${booking.status?.toLowerCase()}`">{{ booking.status }}</span>
+            </div>
           </div>
         </div>
-      </div>
-    </div>
+
+        <!-- Booking Timeline Section (Full Width) -->
+        <div class="details-section">
+          <h4 class="section-title">{{ lang.get("bookings.timeline") }}</h4>
+          <BookingTimelineSection ref="bookingTimelineSection" :booking="booking" />
+        </div>
+      </template>
+    </template>
 
     <template #footer>
-      <div class="modal-footer">
-        <button class="btn btn-secondary" @click="closeModal">{{ lang.get("common.close") }}</button>
-        <button v-if="!isLoading" class="btn btn-primary" :disabled="!hasChanges" @click="saveChanges">{{ lang.get("common.saveChanges") }}</button>
-      </div>
+      <button class="btn btn-secondary" @click="closeModal">{{ lang.get("common.close") }}</button>
+      <button v-if="!isLoading" class="btn btn-primary" :disabled="!hasChanges" @click="saveChanges">{{ lang.get("common.saveChanges") }}</button>
     </template>
   </ModalBase>
 
-  <AddPrepaymentModal ref="addPrepaymentModal" />
+  <AddPrepaymentModal ref="addPrepaymentModal" @prepayment-added="handlePrepaymentAdded" />
 </template>
 
 <script setup>
 import { ref, computed } from "vue";
-import { hotelStore as store } from "../../stores/hotelStore";
 import { languageController as lang } from "../../controller/languageController";
-import { BOOKING_TYPES } from "../../data/constants";
+import { BOOKING_TYPES, BOOKING_EVENT_TYPES, PAYMENT_METHODS } from "../../data/constants";
 import { getBookingById, updateBooking } from "../../services/bookingService";
+import { addPrepayment } from "../../services/prepaymentService";
+import { addBookingEvent } from "../../services/bookingEventService";
+import { useCurrency } from "../../composables/useCurrency";
 import ModalBase from "./ModalBase.vue";
 import AddPrepaymentModal from "./AddPrepaymentModal.vue";
 import TimeDurationPicker from "./booking-details/TimeDurationPicker.vue";
@@ -87,6 +93,7 @@ const changedData = ref({
 });
 
 const addPrepaymentModal = ref(null);
+const bookingTimelineSection = ref(null);
 
 const hasChanges = computed(() => {
   if (changedData.value.checkIn) return true;
@@ -176,6 +183,68 @@ const submitPrepayment = () => {
   }
 };
 
+const getPaymentMethodLabel = (method) => {
+  const methodLabels = {
+    [PAYMENT_METHODS.CASH]: "prepayment.cash",
+    [PAYMENT_METHODS.TRANSFER]: "prepayment.transfer",
+    [PAYMENT_METHODS.CARD]: "prepayment.card",
+  };
+  return lang.get(methodLabels[method] || "prepayment.selectMethod");
+};
+
+const handlePrepaymentAdded = async (prepaymentData) => {
+  try {
+    const { formatCurrency } = useCurrency();
+    const formattedAmount = formatCurrency(prepaymentData.amount);
+
+    // Call API to add prepayment
+    const result = await addPrepayment({
+      bookingId: booking.value.id,
+      amount: prepaymentData.amount,
+      paymentDate: prepaymentData.paymentDate,
+      paymentMethod: prepaymentData.paymentMethod,
+      description: prepaymentData.description,
+    });
+
+    if (result.success) {
+      // Calculate total prepaid
+      booking.value.totalPrepaid += prepaymentData.amount;
+
+      // Create booking event for prepayment
+      let description = "";
+      if (prepaymentData.description) {
+        description += `${lang.get("bookingEvents.paymentDescription")}: ${prepaymentData.description}<br>`;
+      }
+      if (prepaymentData.paymentMethod) {
+        const methodLabel = getPaymentMethodLabel(prepaymentData.paymentMethod);
+        description += `${lang.get("bookingEvents.paymentMethod")}: ${methodLabel}<br>`;
+      }
+      description += `${lang.get("bookingEvents.paymentAmount")}: ${formattedAmount} VND`;
+
+      const eventDataResult = await addBookingEvent(booking.value.id, {
+        type: BOOKING_EVENT_TYPES.PAYMENT,
+        title: lang.get("bookingEvents.payment"),
+        description: description,
+        date: new Date(prepaymentData.paymentDate),
+      });
+
+      console.log("Booking event created:", eventDataResult);
+
+      // Add event locally to timeline (for immediate display)
+      if (bookingTimelineSection.value) {
+        bookingTimelineSection.value.addEventLocal(eventDataResult);
+      }
+
+      console.log("Prepayment added successfully:", eventDataResult);
+      alert(lang.get("common.saveSuccess"));
+    } else {
+      alert(lang.get("common.error") + ": " + result.message);
+    }
+  } catch (error) {
+    alert(lang.get("common.error") + ": " + error.message);
+  }
+};
+
 defineExpose({
   openModal,
   closeModal,
@@ -183,10 +252,6 @@ defineExpose({
 </script>
 
 <style scoped>
-.modal-body {
-  padding: 20px;
-}
-
 .loading-state,
 .error-state {
   padding: 40px 20px;
@@ -353,55 +418,8 @@ defineExpose({
   gap: 12px;
 }
 
-.form-group {
-  flex: 1;
-}
-
-.form-group label {
-  display: block;
-  margin-bottom: 6px;
-  font-weight: 600;
-  color: #333;
-  font-size: 12px;
-}
-
-.required {
-  color: #ef4444;
-}
-
-.input-field {
-  width: 100%;
-  padding: 8px 10px;
-  border: 1px solid #1988ff;
-  border-radius: 4px;
-  font-size: 12px;
-  box-sizing: border-box;
-  transition: border-color 0.2s;
-  background: #ffffff;
-  color: #000000;
-}
-
-.input-field:focus {
-  outline: none;
-  border-color: #667eea;
-  box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1);
-}
-
 .price-input {
   width: 120px;
-  padding: 8px 10px;
-  border: 1px solid #1988ff;
-  border-radius: 4px;
-  font-size: 12px;
-  box-sizing: border-box;
-  background: #ffffff;
-  color: #000000;
-}
-
-.price-input:focus {
-  outline: none;
-  border-color: #667eea;
-  box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1);
 }
 
 .edit-time-info {
@@ -422,50 +440,5 @@ defineExpose({
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 12px;
-}
-
-.btn {
-  padding: 10px 20px;
-  border: none;
-  border-radius: 6px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
-  font-size: 14px;
-}
-
-.btn-primary {
-  background: #667eea;
-  color: white;
-}
-
-.btn-primary:hover:not(:disabled) {
-  background: #5568d3;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
-}
-
-.btn-primary:disabled {
-  background: #d1d5db;
-  color: #9ca3af;
-  cursor: not-allowed;
-}
-
-.btn-secondary {
-  background: #e5e7eb;
-  color: #374151;
-}
-
-.btn-secondary:hover {
-  background: #d1d5db;
-  transform: translateY(-1px);
-}
-
-.modal-footer {
-  padding: 16px 20px;
-  display: flex;
-  justify-content: flex-end;
-  gap: 10px;
-  background: white;
 }
 </style>

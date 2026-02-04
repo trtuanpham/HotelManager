@@ -1,4 +1,14 @@
 import { hotelStore } from "../stores/hotelStore";
+import { BOOKING_EVENT_TYPES } from "../data/constants";
+
+/**
+ * @typedef {Object} BookingEventData
+ * @property {string} bookingId - The booking ID (required)
+ * @property {string} type - Event type: 'booking_created', 'booking_completed', 'checkin', 'checkout', 'payment', 'prepayment', 'service_used' (required)
+ * @property {string} title - Event title/header text (required)
+ * @property {string} [description] - Event description text (optional)
+ * @property {Date} [date] - Event date/time in format "YYYY-MM-DD HH:mm" (optional, defaults to current time)
+ */
 
 /**
  * Get all booking events by booking ID (simulated API call)
@@ -10,7 +20,7 @@ export const getBookingEventsByBookingId = async (bookingId) => {
     setTimeout(() => {
       const events = hotelStore.getBookingEventsByBookingId(bookingId);
       resolve(events || []);
-    }, 3000); // Simulate 300ms network delay
+    }, 3000); // Simulate 3000ms network delay
   });
 };
 
@@ -48,24 +58,25 @@ export const getBookingEventsByBookingIdPaginated = async (bookingId, lastEventI
 
 /**
  * Add a new booking event (simulated API call)
- * @param {object} eventData - The event data
+ * @param {string} bookingId - The booking ID
+ * @param {BookingEventData} eventData - The event data
  * @returns {Promise<object>} Created event
  */
-export const addBookingEvent = async (eventData) => {
+export const addBookingEvent = async (bookingId, eventData) => {
   return new Promise((resolve, reject) => {
     setTimeout(() => {
       try {
         // Validate required fields
-        if (!eventData.bookingId || !eventData.type || !eventData.title) {
+        if (!bookingId || !eventData.type || !eventData.title) {
           throw new Error("Missing required fields: bookingId, type, or title");
         }
 
         // Create new event with ID
-        const newEventId = Math.max(...hotelStore.bookingEvents.map((e) => e.id), 0) + 1;
+        const newEventId = `event_${Date.now()}`;
         const newEvent = {
           id: newEventId,
+          bookingId,
           ...eventData,
-          date: eventData.date || new Date().toLocaleString("vi-VN"),
         };
 
         // Add to store
@@ -80,7 +91,7 @@ export const addBookingEvent = async (eventData) => {
 
 /**
  * Update a booking event (simulated API call)
- * @param {number} eventId - The event ID
+ * @param {string} eventId - The event ID
  * @param {object} updates - The updates to apply
  * @returns {Promise<object>} Updated event
  */
@@ -105,7 +116,7 @@ export const updateBookingEvent = async (eventId, updates) => {
 
 /**
  * Delete a booking event (simulated API call)
- * @param {number} eventId - The event ID
+ * @param {string} eventId - The event ID
  * @returns {Promise<object>} Result of deletion
  */
 export const deleteBookingEvent = async (eventId) => {

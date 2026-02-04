@@ -1,13 +1,13 @@
 <template>
   <teleport to="body">
-    <div v-if="isVisible" class="modal-overlay" :style="{ zIndex: modalZIndex }" @click.self="handleClose">
+    <div v-if="isVisible" class="modal-overlay" :style="{ zIndex: modalZIndex }">
       <div class="modal-container" :style="{ maxWidth: maxWidth, maxHeight: maxHeight }">
-        <div v-if="title" class="modal-header">
-          <h3>{{ title }}</h3>
+        <div class="modal-header">
+          <slot name="title"></slot>
           <button class="close-btn" @click="handleClose">×</button>
         </div>
         <div class="modal-body-wrapper">
-          <slot></slot>
+          <slot name="content"></slot>
         </div>
         <div class="modal-footer-wrapper">
           <slot name="footer"></slot>
@@ -122,7 +122,8 @@ watch(
   flex-shrink: 0;
 }
 
-.modal-header h3 {
+.modal-header h3,
+.modal-header :deep(h3) {
   margin: 0;
   font-size: 20px;
   color: #333;
@@ -152,11 +153,105 @@ watch(
 .modal-body-wrapper {
   overflow-y: auto;
   overflow-x: hidden;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
 .modal-footer-wrapper {
   flex-shrink: 0;
   border-top: 1px solid #e5e7eb;
   background: white;
+  padding: 20px;
+  display: flex;
+  gap: 15px;
+  justify-content: flex-end;
+}
+
+/* Modal Footer Buttons */
+.modal-footer-wrapper .btn {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 14px;
+}
+
+.modal-footer-wrapper .btn-primary {
+  background: #667eea;
+  color: white;
+}
+
+.modal-footer-wrapper .btn-primary:hover {
+  background: #5568d3;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.modal-footer-wrapper .btn-secondary {
+  background: #e5e7eb;
+  color: #333;
+}
+
+.modal-footer-wrapper .btn-secondary:hover {
+  background: #d1d5db;
+}
+
+/* Form Styles */
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.form-row .form-group {
+  gap: 6px;
+}
+
+.form-group label {
+  font-weight: 600;
+  color: #333;
+  font-size: 12px;
+}
+
+.required {
+  color: #ef4444;
+}
+
+.input-field {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid #1988ff;
+  border-radius: 4px;
+  font-size: 12px;
+  box-sizing: border-box;
+  transition: border-color 0.2s;
+  background: #ffffff;
+  color: #000000;
+}
+
+.input-field:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1);
+}
+
+select.input-field {
+  background: #ffffff;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23667eea' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  padding-right: 32px;
+  appearance: none;
+  cursor: pointer;
 }
 </style>
