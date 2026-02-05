@@ -2,56 +2,36 @@
   <div class="guests-manager">
     <div class="header">
       <h1>👥 Quản lý khách hàng</h1>
-      <button class="btn-primary" @click="showAddForm = true">+ Thêm khách</button>
-    </div>
-
-    <div v-if="showAddForm" class="modal-overlay">
-      <div class="modal">
-        <h2>Thêm khách hàng mới</h2>
-        <form @submit.prevent="addGuest">
-          <input v-model="newGuest.name" placeholder="Tên khách hàng" required />
-          <input v-model="newGuest.email" type="email" placeholder="Email" required />
-          <input v-model="newGuest.phone" placeholder="Số điện thoại" required />
-          <input v-model="newGuest.room" placeholder="Số phòng (tùy chọn)" />
-          <input v-model="newGuest.checkIn" type="date" required />
-          <input v-model="newGuest.checkOut" type="date" required />
-          <div class="modal-buttons">
-            <button type="submit" class="btn-primary">Thêm</button>
-            <button type="button" class="btn-secondary" @click="showAddForm = false">Hủy</button>
-          </div>
-        </form>
-      </div>
+      <button class="btn-primary" @click="createGuestModalRef.openModal()">+ Thêm khách</button>
     </div>
 
     <div class="search-box">
-      <input 
-        v-model="searchTerm" 
-        type="text" 
-        placeholder="Tìm kiếm khách hàng..."
-        class="search-input"
-      />
+      <input v-model="searchTerm" type="text" placeholder="Tìm kiếm khách hàng..." class="search-input" />
     </div>
 
     <table class="data-table">
       <thead>
         <tr>
+          <th>Avatar</th>
           <th>Tên khách</th>
+          <th>Số căn cước</th>
           <th>Email</th>
           <th>Số điện thoại</th>
-          <th>Phòng</th>
-          <th>Ngày nhận</th>
-          <th>Ngày trả</th>
+          <th>Ngày tham gia</th>
           <th>Thao tác</th>
         </tr>
       </thead>
       <tbody>
         <tr v-for="guest in filteredGuests" :key="guest.id">
+          <td class="avatar-cell">
+            <img v-if="guest.avatar" :src="guest.avatar" :alt="guest.name" class="avatar-img" />
+            <div v-else class="avatar-placeholder">{{ getInitials(guest.name) }}</div>
+          </td>
           <td>{{ guest.name }}</td>
+          <td>{{ guest.citizenId }}</td>
           <td>{{ guest.email }}</td>
           <td>{{ guest.phone }}</td>
-          <td>{{ guest.room || '-' }}</td>
-          <td>{{ formatDate(guest.checkIn) }}</td>
-          <td>{{ formatDate(guest.checkOut) }}</td>
+          <td>{{ formatDate(guest.createdAt) }}</td>
           <td class="actions">
             <button class="btn-small" @click="editGuest(guest)">✏️ Sửa</button>
             <button class="btn-small btn-danger" @click="deleteGuest(guest.id)">🗑️ Xóa</button>
@@ -60,82 +40,55 @@
       </tbody>
     </table>
 
-    <div v-if="editingGuest" class="modal-overlay">
-      <div class="modal">
-        <h2>Chỉnh sửa khách hàng</h2>
-        <form @submit.prevent="updateGuest">
-          <input v-model="editingGuest.name" placeholder="Tên khách hàng" required />
-          <input v-model="editingGuest.email" type="email" placeholder="Email" required />
-          <input v-model="editingGuest.phone" placeholder="Số điện thoại" required />
-          <input v-model="editingGuest.room" placeholder="Số phòng (tùy chọn)" />
-          <input v-model="editingGuest.checkIn" type="date" required />
-          <input v-model="editingGuest.checkOut" type="date" required />
-          <div class="modal-buttons">
-            <button type="submit" class="btn-primary">Cập nhật</button>
-            <button type="button" class="btn-secondary" @click="editingGuest = null">Hủy</button>
-          </div>
-        </form>
-      </div>
-    </div>
+    <CreateGuestModal ref="createGuestModalRef" />
+    <GuestDetailsModal ref="guestDetailsModalRef" />
+    <ConfirmDialog ref="confirmDialogRef" />
   </div>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
-import { hotelStore as store } from '../stores/hotelStore'
-import { langVN as lang } from '../locales/vi'
+import { ref, computed } from "vue";
+import { hotelStore as store } from "../stores/hotelStore";
+import { langVN as lang } from "../locales/vi";
+import CreateGuestModal from "../components/modals/CreateGuestModal.vue";
+import GuestDetailsModal from "../components/modals/GuestDetailsModal.vue";
+import ConfirmDialog from "../components/modals/ConfirmDialog.vue";
 
-const showAddForm = ref(false)
-const editingGuest = ref(null)
-const searchTerm = ref('')
-const newGuest = ref({
-  name: '',
-  email: '',
-  phone: '',
-  room: '',
-  checkIn: '',
-  checkOut: ''
-})
+const createGuestModalRef = ref(null);
+const guestDetailsModalRef = ref(null);
+const confirmDialogRef = ref(null);
+const searchTerm = ref("");
 
 const filteredGuests = computed(() => {
-  return store.guests.filter(guest =>
-    guest.name.toLowerCase().includes(searchTerm.value.toLowerCase()) ||
-    guest.email.toLowerCase().includes(searchTerm.value.toLowerCase()) ||
-    guest.phone.includes(searchTerm.value)
-  )
-})
+  return store.guests.filter(
+    (guest) => guest.name.toLowerCase().includes(searchTerm.value.toLowerCase()) || guest.email.toLowerCase().includes(searchTerm.value.toLowerCase()) || guest.phone.includes(searchTerm.value),
+  );
+});
 
-const addGuest = () => {
-  store.addGuest(newGuest.value)
-  newGuest.value = {
-    name: '',
-    email: '',
-    phone: '',
-    room: '',
-    checkIn: '',
-    checkOut: ''
+const deleteGuest = async (id) => {
+  const result = await confirmDialogRef.value.show({
+    title: "Xóa khách hàng",
+    message: "Bạn có chắc chắn muốn xóa khách hàng này?",
+    confirmText: "Xóa",
+    cancelText: "Hủy",
+  });
+  if (result) {
+    store.deleteGuest(id);
   }
-  showAddForm.value = false
-}
-
-const deleteGuest = (id) => {
-  if (confirm(lang.guests.deleteConfirm)) {
-    store.deleteGuest(id)
-  }
-}
-
-const editGuest = (guest) => {
-  editingGuest.value = { ...guest }
-}
-
-const updateGuest = () => {
-  store.updateGuest(editingGuest.value.id, editingGuest.value)
-  editingGuest.value = null
-}
+};
 
 const formatDate = (date) => {
-  return new Date(date).toLocaleDateString('vi-VN')
-}
+  return new Date(date).toLocaleDateString("vi-VN");
+};
+
+const getInitials = (name) => {
+  return name
+    .split(" ")
+    .map((word) => word.charAt(0))
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
+};
 </script>
 
 <style scoped>
@@ -205,6 +158,33 @@ const formatDate = (date) => {
 .actions {
   display: flex;
   gap: 8px;
+}
+
+.avatar-cell {
+  text-align: center;
+  padding: 8px 15px;
+}
+
+.avatar-img {
+  width: 50px;
+  height: 50px;
+  border-radius: 4px;
+  object-fit: cover;
+  border: 2px solid #e0e0e0;
+}
+
+.avatar-placeholder {
+  width: 50px;
+  height: 50px;
+  border-radius: 4px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 14px;
+  margin: 0 auto;
 }
 
 .btn-primary {

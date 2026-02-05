@@ -9,7 +9,11 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@babel/runtime": "^7.28.6",
+    "@material-design-icons/font": "^0.14.15",
+    "cropperjs": "^2.1.0",
     "vue": "^3.5.24",
+    "vue-avatar-cropper": "^6.1.1",
     "vue-router": "^4.6.4"
   },
   "devDependencies": {

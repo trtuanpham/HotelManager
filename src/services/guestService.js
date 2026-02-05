@@ -90,16 +90,24 @@ export const getGuestById = async (id) => {
  */
 export const createGuest = async (guestData) => {
   // Dummy API call - replace with real API later
-  return new Promise((resolve) => {
+  return new Promise((resolve, reject) => {
     setTimeout(
       () => {
-        const newGuest = {
-          id: Math.max(...store.guests.map((g) => g.id), 0) + 1,
-          ...guestData,
-        };
+        try {
+          if (store.guests.some((g) => g.citizenId === guestData.citizenId)) {
+            throw new Error("duplicateCitizenId");
+          }
 
-        store.addGuest(newGuest);
-        resolve(newGuest);
+          const newGuest = {
+            id: "guest_" + Date.now(),
+            ...guestData,
+          };
+
+          store.addGuest(newGuest);
+          resolve(newGuest);
+        } catch (error) {
+          reject(error.message);
+        }
       },
       Math.random() * 1000 + 1000,
     ); // Simulate 1-2 second network delay

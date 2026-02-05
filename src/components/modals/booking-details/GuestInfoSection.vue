@@ -47,8 +47,7 @@
   <!-- Guest Search Modal -->
   <GuestSearchModal
     :is-open="showGuestSearchModal"
-    :search-input="guestSearchInput"
-    :filtered-guests="filteredGuests"
+    :selected-guest-ids="props.booking?.guestIds || []"
     @close="showGuestSearchModal = false"
     @select-guest="addGuest"
     @guest-created="onGuestCreated"
@@ -63,7 +62,7 @@ import { ref, watch, computed } from "vue";
 import { languageController as lang } from "../../../controller/languageController";
 import { DEFAULT_AVATAR_SVG } from "../../../data/constants";
 import { getGuestById, getAllGuests } from "../../../services/guestService";
-import GuestSearchModal from "./GuestSearchModal.vue";
+import GuestSearchModal from "../GuestSearchModal.vue";
 import ConfirmDialog from "../ConfirmDialog.vue";
 
 const props = defineProps({
@@ -79,25 +78,14 @@ const isEditMode = ref(false);
 const loadingGuestIds = ref(new Set());
 const loadedGuestData = ref({});
 const showGuestSearchModal = ref(false);
-const guestSearchInput = ref("");
 const allGuests = ref([]);
 const confirmDialogRef = ref(null);
 const guestToRemove = ref(null);
 
-// Computed property to get accompanied guest IDs (all except first/main guest)
+// Computed property to get accompanied guest IDs (all guests)
 const accompaniedGuestIds = computed(() => {
-  if (!props.booking?.guestIds || props.booking.guestIds.length <= 1) return [];
-  return props.booking.guestIds.slice(1);
-});
-
-// Filtered guests based on search input
-const filteredGuests = computed(() => {
-  if (!guestSearchInput.value.trim()) return [];
-
-  const search = guestSearchInput.value.toLowerCase();
-  const currentGuestIds = new Set(props.booking?.guestIds || []);
-
-  return allGuests.value.filter((guest) => !currentGuestIds.has(guest.id) && (guest.name.toLowerCase().includes(search) || guest.citizenId?.toLowerCase().includes(search)));
+  if (!props.booking?.guestIds || props.booking.guestIds.length === 0) return [];
+  return props.booking.guestIds;
 });
 
 // Load detailed guest data for each accompanied guest
@@ -168,8 +156,8 @@ const addGuest = (guestId) => {
   if (!props.booking) return;
   if (!props.booking.guestIds.includes(guestId)) {
     props.booking.guestIds.push(guestId);
+    loadGuestDetails(guestId);
     showGuestSearchModal.value = false;
-    guestSearchInput.value = "";
   }
 };
 
@@ -194,10 +182,9 @@ watch(showGuestSearchModal, async (isOpen) => {
 watch(
   () => props.booking?.guestIds,
   async (guestIds) => {
-    if (!guestIds || guestIds.length <= 1) return;
+    if (!guestIds || guestIds.length === 0) return;
 
-    const accompaniedGuestIds = guestIds.slice(1);
-    await Promise.all(accompaniedGuestIds.map((guestId) => loadGuestDetails(guestId)));
+    await Promise.all(guestIds.map((guestId) => loadGuestDetails(guestId)));
   },
   { immediate: true },
 );

@@ -1,10 +1,10 @@
 <template>
   <div class="dashboard-section full">
-    <h2>{{ lang.dashboard.roomStatusManagement }}</h2>
+    <h2>{{ lang.get("dashboard.roomStatusManagement") }}</h2>
     <!-- Loading State -->
     <template v-if="isLoading">
       <div class="room-group">
-        <h3 class="group-title">{{ lang.dashboard.group || "Group" }} 1</h3>
+        <h3 class="group-title">{{ lang.get("dashboard.group") || "Group" }} 1</h3>
         <div class="rooms-grid">
           <div v-for="i in 8" :key="`skeleton-${i}`" class="room-card skeleton-item">
             <div class="skeleton-content">
@@ -19,7 +19,7 @@
     <!-- Content State -->
     <template v-else v-for="(rooms, group) in roomsByGroup" :key="group">
       <div class="room-group">
-        <h3 class="group-title">{{ lang.dashboard.group || "Group" }} {{ group }}</h3>
+        <h3 class="group-title">{{ lang.get("dashboard.group") || "Group" }} {{ group }}</h3>
         <div class="rooms-grid">
           <div v-for="room in rooms" :key="room.id" :class="['room-card', room.status.toLowerCase()]" @click="processingRoomId !== room.id && handleRoomCardClick(room)">
             <div v-if="processingRoomId === room.id" class="loading-overlay">
@@ -42,13 +42,15 @@
 </template>
 
 <script setup>
-import { computed, ref } from "vue";
-import { langVN as lang } from "../locales/vi";
+import { computed, ref, getCurrentInstance } from "vue";
 import ConfirmDialog from "./modals/ConfirmDialog.vue";
 import CreateBookingModal from "./modals/CreateBookingModal.vue";
 import BookingDetailsModal from "./modals/BookingDetailsModal.vue";
 import { ROOM_STATUS } from "../data/constants";
 import { updateRoomStatus } from "../services/roomService";
+
+const instance = getCurrentInstance();
+const lang = instance.appContext.config.globalProperties.$lang;
 
 const props = defineProps({
   rooms: {
@@ -62,10 +64,10 @@ const props = defineProps({
 });
 
 const MAP_STATUS_LABEL = {
-  Available: lang.dashboard.statusAvailable,
-  Occupied: lang.dashboard.statusOccupied,
-  Maintenance: lang.dashboard.statusMaintenance,
-  Cleaning: lang.dashboard.statusCleaning,
+  Available: lang.get("dashboard.statusAvailable"),
+  Occupied: lang.get("dashboard.statusOccupied"),
+  Maintenance: lang.get("dashboard.statusMaintenance"),
+  Cleaning: lang.get("dashboard.statusCleaning"),
 };
 
 const confirmDialog = ref(null);
@@ -88,10 +90,10 @@ const handleRoomCardClick = async (room) => {
   console.log("Room card clicked:", room);
   if (room.status === ROOM_STATUS.CLEANING) {
     const result = await confirmDialog.value.show({
-      title: lang.confirmDialog.title,
-      message: lang.confirmDialog.roomCleaningConfirm.replace("{roomNumber}", room.number),
-      cancelText: lang.confirmDialog.cancel,
-      confirmText: lang.confirmDialog.confirmDone,
+      title: lang.get("confirmDialog.title"),
+      message: lang.get("confirmDialog.roomCleaningConfirm").replace("{roomNumber}", room.number),
+      cancelText: lang.get("confirmDialog.cancel"),
+      confirmText: lang.get("confirmDialog.confirmDone"),
     });
     if (result) {
       try {

@@ -305,6 +305,7 @@ export const hotelStore = reactive({
     const newGuest = {
       id: `guest_${maxId + 1}`,
       ...guest,
+      createdAt: new Date().toISOString().split("T")[0], // Format: YYYY-MM-DD
     };
     this.guests.push(newGuest);
     return newGuest;

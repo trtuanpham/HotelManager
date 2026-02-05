@@ -52,7 +52,6 @@ export const BOOKING_EVENT_TYPES = {
   CHECKIN: "checkin",
   CHECKOUT: "checkout",
   PAYMENT: "payment",
-  PREPAYMENT: "prepayment",
   SERVICE_USED: "service_used",
 };
 
@@ -62,7 +61,6 @@ export const BOOKING_EVENT_ICONS = {
   checkin: "icon-checkin.svg",
   checkout: "icon-checkout.svg",
   payment: "icon-payment.svg",
-  prepayment: "icon-prepayment.svg",
   service_used: "icon-service-used.svg",
 };
 

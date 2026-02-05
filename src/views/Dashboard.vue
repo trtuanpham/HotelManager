@@ -1,6 +1,6 @@
 <template>
   <div class="dashboard">
-    <h1>{{ lang.dashboard.title }}</h1>
+    <h1>{{ lang.get("dashboard.title") }}</h1>
 
     <div class="stats-grid">
       <!-- Loading State -->
@@ -14,27 +14,27 @@
       <!-- Content State -->
       <template v-else>
         <div class="stat-card">
-          <h3>{{ lang.dashboard.totalRooms }}</h3>
+          <h3>{{ lang.get("dashboard.totalRooms") }}</h3>
           <p class="stat-number">{{ rooms.length }}</p>
-          <span class="stat-label">{{ lang.dashboard.rooms }}</span>
+          <span class="stat-label">{{ lang.get("dashboard.rooms") }}</span>
         </div>
 
         <div class="stat-card">
-          <h3>{{ lang.dashboard.availableRooms }}</h3>
+          <h3>{{ lang.get("dashboard.availableRooms") }}</h3>
           <p class="stat-number">{{ availableRooms }}</p>
-          <span class="stat-label">{{ lang.dashboard.available }}</span>
+          <span class="stat-label">{{ lang.get("dashboard.available") }}</span>
         </div>
 
         <div class="stat-card">
-          <h3>{{ lang.dashboard.occupiedRooms }}</h3>
+          <h3>{{ lang.get("dashboard.occupiedRooms") }}</h3>
           <p class="stat-number">{{ occupiedRooms }}</p>
-          <span class="stat-label">{{ lang.dashboard.occupied }}</span>
+          <span class="stat-label">{{ lang.get("dashboard.occupied") }}</span>
         </div>
 
         <div class="stat-card">
-          <h3>{{ lang.dashboard.totalGuests }}</h3>
+          <h3>{{ lang.get("dashboard.totalGuests") }}</h3>
           <p class="stat-number">{{ store.guests.length }}</p>
-          <span class="stat-label">{{ lang.dashboard.occupied }}</span>
+          <span class="stat-label">{{ lang.get("dashboard.occupied") }}</span>
         </div>
       </template>
     </div>
@@ -72,16 +72,16 @@
     </div> -->
 
     <div class="dashboard-section full">
-      <h2>{{ lang.dashboard.upcomingBookings }}</h2>
+      <h2>{{ lang.get("dashboard.upcomingBookings") }}</h2>
       <table class="data-table">
         <thead>
           <tr>
-            <th>{{ lang.dashboard.guest }}</th>
-            <th>{{ lang.dashboard.room }}</th>
-            <th>{{ lang.dashboard.checkIn }}</th>
-            <th>{{ lang.dashboard.checkOut }}</th>
-            <th>{{ lang.dashboard.totalPrice }}</th>
-            <th>{{ lang.dashboard.status }}</th>
+            <th>{{ lang.get("dashboard.guest") }}</th>
+            <th>{{ lang.get("dashboard.room") }}</th>
+            <th>{{ lang.get("dashboard.checkIn") }}</th>
+            <th>{{ lang.get("dashboard.checkOut") }}</th>
+            <th>{{ lang.get("dashboard.totalPrice") }}</th>
+            <th>{{ lang.get("dashboard.status") }}</th>
           </tr>
         </thead>
         <tbody>
@@ -106,11 +106,11 @@
 <script setup>
 import { ref, computed, onMounted } from "vue";
 import { hotelStore as store } from "../stores/hotelStore";
-import { langVN as lang } from "../locales/vi";
 import RoomStatusGrid from "../components/RoomStatusGrid.vue";
 import BookingDetailsModal from "../components/modals/BookingDetailsModal.vue";
 import { getUpcomingBookings } from "../services/bookingService";
 import { getAllRooms } from "../services/roomService";
+import { languageController as lang } from "../controller/languageController";
 
 const bookingDetailsModalRef = ref(null);
 const rooms = ref([]);

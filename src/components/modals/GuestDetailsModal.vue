@@ -1,22 +1,21 @@
 <template>
-  <ModalBase :is-visible="isVisible" modal-id="guest-modal" max-width="800px" @close="closeModal">
+  <ModalBase :is-visible="isVisible" modal-id="guest-details-modal" max-width="800px" @close="closeModal">
     <template #title>
-      <h3>{{ lang.get("guest.create") }}</h3>
+      <h3>{{ lang.get("guest.editGuestTitle") || "Chi tiết khách hàng" }}</h3>
     </template>
 
     <template #content>
       <div class="guest-form-wrapper">
-        <!-- <AvatarCropper :canvas-width="350" :canvas-height="221" :crop-size="100" /> -->
-        <!-- Photo Editor Component - for uploading citizen ID card -->
+        <!-- Photo Editor Component -->
         <PhotoEditor
-          :avatar="croppedAvatar"
+          :avatar="formData.avatar"
           :canvas-width="250"
           :canvas-height="250"
           @update:avatar="
             (newAvatar) => {
-              console.log('[CreateGuestModal] PhotoEditor emitted:', newAvatar.substring(0, 50) + '...');
-              croppedAvatar = newAvatar;
-              console.log('[CreateGuestModal] croppedAvatar updated:', croppedAvatar.substring(0, 50) + '...');
+              console.log('[GuestDetailsModal] PhotoEditor emitted:', newAvatar.substring(0, 50) + '...');
+              formData.avatar = newAvatar;
+              console.log('[GuestDetailsModal] avatar updated:', formData.avatar.substring(0, 50) + '...');
             }
           "
         />
@@ -58,7 +57,7 @@
     <template #footer>
       <button class="btn btn-secondary" @click="closeModal" :disabled="isSubmitting">{{ lang.get("common.cancel") }}</button>
       <button class="btn btn-primary" @click="submitGuest" :disabled="isSubmitting">
-        {{ isSubmitting ? "Đang lưu..." : lang.get("guest.create") }}
+        {{ isSubmitting ? "Đang lưu..." : lang.get("guests.update") }}
       </button>
     </template>
   </ModalBase>
@@ -68,20 +67,19 @@
 
 <script setup>
 import { ref } from "vue";
-import { hotelStore as store } from "../../stores/hotelStore";
 import { languageController as lang } from "../../controller/languageController";
 import { NATIONALITIES } from "../../data/constants";
-import { createGuest } from "../../services/guestService";
+import { updateGuest } from "../../services/guestService";
 import ModalBase from "./ModalBase.vue";
 import PhotoEditor from "./PhotoEditor.vue";
-import ImageCropper from "../ImageCropper.vue";
 import MessageModal from "./MessageModal.vue";
 import "../../style/common.css";
 
 const isVisible = ref(false);
-const croppedAvatar = ref("");
 const isSubmitting = ref(false);
 const messageModalRef = ref(null);
+const currentGuestId = ref(null);
+
 const formData = ref({
   name: "",
   email: "",
@@ -91,23 +89,24 @@ const formData = ref({
   avatar: "",
 });
 
-const openModal = (guestName = "") => {
-  croppedAvatar.value = "";
-  console.log("[CreateGuestModal] openModal - croppedAvatar reset");
+const openModal = (guest) => {
+  if (!guest) return;
+
+  currentGuestId.value = guest.id;
   formData.value = {
-    name: guestName,
-    email: "",
-    phone: "",
-    citizenId: "",
-    nationality: "",
-    avatar: "",
+    name: guest.name || "",
+    email: guest.email || "",
+    phone: guest.phone || "",
+    citizenId: guest.citizenId || "",
+    nationality: guest.nationality || "",
+    avatar: guest.avatar || "",
   };
   isVisible.value = true;
 };
 
 const closeModal = () => {
   isVisible.value = false;
-  croppedAvatar.value = "";
+  currentGuestId.value = null;
   formData.value = {
     name: "",
     email: "",
@@ -149,7 +148,7 @@ const submitGuest = async () => {
   isSubmitting.value = true;
 
   try {
-    const newGuest = {
+    const updatedGuestData = {
       name: formData.value.name,
       email: formData.value.email,
       phone: formData.value.phone,
@@ -158,21 +157,21 @@ const submitGuest = async () => {
       avatar: formData.value.avatar,
     };
 
-    // Call API to create guest
-    const createdGuest = await createGuest(newGuest);
+    // Call API to update guest
+    const updatedGuest = await updateGuest(currentGuestId.value, updatedGuestData);
 
-    console.log("[CreateGuestModal] Guest created successfully:", createdGuest);
+    console.log("[GuestDetailsModal] Guest updated successfully:", updatedGuest);
     await messageModalRef.value.show({
       title: lang.get("common.success"),
-      message: lang.get("guest.created"),
+      message: lang.get("guests.updateSuccess") || "Cập nhật khách hàng thành công",
       buttonText: lang.get("common.close"),
     });
     closeModal();
   } catch (error) {
-    console.error("[CreateGuestModal] Error creating guest:", error);
+    console.error("[GuestDetailsModal] Error updating guest:", error);
     await messageModalRef.value.show({
       title: lang.get("common.error"),
-      message: lang.get("guest.createError") + ": " + error.message,
+      message: lang.get("guests.updateError") || "Lỗi khi cập nhật khách hàng: " + error.message,
       buttonText: lang.get("common.close"),
     });
   } finally {

@@ -1,6 +1,6 @@
 <template>
   <div class="guest-avatar-section">
-    <label class="avatar-label">{{ lang.guest?.image }}</label>
+    <label class="avatar-label">{{ lang.get("guest.citizenIdCard") }}</label>
     <div
       class="avatar-preview"
       @click="triggerFileUpload"
@@ -12,26 +12,36 @@
     >
       <img v-if="avatar" :src="avatar" alt="Guest Avatar" class="avatar-img" />
       <div v-else class="avatar-placeholder">
-        <img :src="IconAdd" alt="Add Photo" class="placeholder-icon" />
+        <i class="material-icons add-icon">add_a_photo</i>
       </div>
     </div>
     <div class="avatar-buttons">
-      <!-- <button type="button" class="btn-avatar" @click="triggerFileUpload">📁 Upload</button>
-      <button type="button" class="btn-avatar" @click="openWebcam">📹 Webcam</button> -->
       <input ref="fileInputRef" type="file" accept="image/*" style="display: none" @change="handleFileUpload" />
     </div>
+
+    <!-- Crop Image Modal -->
+    <CropImageModal :is-visible="isModalVisible" :target-image="inputImage" :canvas-width="canvasWidth" :canvas-height="canvasHeight" @close="closeModal" @confirm="handleCropConfirm" />
   </div>
 </template>
 
 <script setup>
 import { ref, defineProps, defineEmits, onMounted, onUnmounted } from "vue";
-import { langVN as lang } from "../../locales/vi";
-import IconAdd from "../../assets/icon-add.svg";
+import { languageController as lang } from "../../controller/languageController";
+import CropImageModal from "./CropImageModal.vue";
+import "@material-design-icons/font";
 
 const props = defineProps({
   avatar: {
     type: String,
     default: "",
+  },
+  canvasWidth: {
+    type: Number,
+    default: 350,
+  },
+  canvasHeight: {
+    type: Number,
+    default: 221,
   },
 });
 
@@ -39,6 +49,8 @@ const emit = defineEmits(["update:avatar"]);
 
 const fileInputRef = ref(null);
 const isDragging = ref(false);
+const isModalVisible = ref(false);
+const inputImage = ref(null);
 
 const triggerFileUpload = () => {
   fileInputRef.value?.click();
@@ -49,10 +61,22 @@ const handleFileUpload = (event) => {
   if (file) {
     const reader = new FileReader();
     reader.onload = (e) => {
-      emit("update:avatar", e.target?.result || "");
+      inputImage.value = e.target?.result || "";
+      isModalVisible.value = true;
     };
     reader.readAsDataURL(file);
   }
+  event.target.value = "";
+};
+
+const closeModal = () => {
+  isModalVisible.value = false;
+  inputImage.value = null;
+};
+
+const handleCropConfirm = (croppedImage) => {
+  emit("update:avatar", croppedImage);
+  closeModal();
 };
 
 const handleDrop = (event) => {
@@ -63,7 +87,10 @@ const handleDrop = (event) => {
     if (file.type.startsWith("image/")) {
       const reader = new FileReader();
       reader.onload = (e) => {
-        emit("update:avatar", e.target?.result || "");
+        const imageData = e.target?.result || "";
+        console.log("[PhotoEditor] Drop - emitting avatar:", imageData.substring(0, 50) + "...");
+        inputImage.value = imageData;
+        isModalVisible.value = true;
       };
       reader.readAsDataURL(file);
     }
@@ -80,7 +107,9 @@ const handlePaste = (event) => {
       if (file) {
         const reader = new FileReader();
         reader.onload = (e) => {
-          emit("update:avatar", e.target?.result || "");
+          const imageData = e.target?.result || "";
+          inputImage.value = imageData;
+          isModalVisible.value = true;
         };
         reader.readAsDataURL(file);
       }
@@ -167,7 +196,7 @@ onUnmounted(() => {
 .avatar-preview {
   width: 100%;
   height: auto;
-  aspect-ratio: 8.56 / 5.398;
+  aspect-ratio: v-bind("canvasWidth / canvasHeight");
   border: 2px dashed #d1d5db;
   border-radius: 8px;
   display: flex;
@@ -193,10 +222,10 @@ onUnmounted(() => {
 /* PC: Fixed width and height with correct aspect ratio */
 @media (min-width: 768px) {
   .avatar-preview {
-    width: 350px;
+    width: v-bind("canvasWidth + 'px'");
     height: auto;
-    aspect-ratio: 8.56 / 5.398;
-    min-height: 221px;
+    aspect-ratio: v-bind("canvasWidth / canvasHeight");
+    min-height: v-bind("canvasHeight + 'px'");
   }
 }
 
@@ -217,16 +246,14 @@ onUnmounted(() => {
 }
 
 .avatar-placeholder {
-  font-size: 48px;
-  color: #d1d5db;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-.placeholder-icon {
-  width: 25%;
-  height: 25%;
+.add-icon {
+  font-size: 48px;
+  color: #d1d5db;
   opacity: 0.4;
 }
 
@@ -237,21 +264,33 @@ onUnmounted(() => {
   width: 100%;
 }
 
-.btn-avatar {
-  padding: 8px 12px;
-  background: #667eea;
-  color: white;
+.btn {
+  padding: 10px 20px;
   border: none;
   border-radius: 6px;
-  font-size: 12px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s;
-  width: 100%;
+  font-size: 14px;
 }
 
-.btn-avatar:hover {
+.btn-primary {
+  background: #667eea;
+  color: white;
+}
+
+.btn-primary:hover {
   background: #5568d3;
   transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.btn-secondary {
+  background: #e5e7eb;
+  color: #333;
+}
+
+.btn-secondary:hover {
+  background: #d1d5db;
 }
 </style>
