@@ -48,7 +48,6 @@
       <div class="pagination-info">{{ paginationText }}</div>
       <div class="pagination-controls">
         <button class="btn-pagination" @click="handlePrevPage" :disabled="!hasPrevPage || isLoading"><i class="material-icons">chevron_left</i> {{ lang.get("common.previous") }}</button>
-        <span class="page-info">{{ lang.get("common.page") }} {{ currentPage }} / {{ totalPages }}</span>
         <button class="btn-pagination" @click="handleNextPage" :disabled="!hasNextPage || isLoading">{{ lang.get("common.next") }} <i class="material-icons">chevron_right</i></button>
       </div>
     </div>
