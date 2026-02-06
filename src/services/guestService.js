@@ -1,6 +1,50 @@
 import { hotelStore as store } from "../stores/hotelStore";
 
 /**
+ * Get guests with pagination and search
+ * @param {Object} options - Query options
+ * @param {number} options.page - Page number (1-based)
+ * @param {number} options.pageSize - Items per page (default: 10)
+ * @param {string} options.search - Search query (name or citizenId)
+ * @returns {Promise<Object>} Object with guests, total, and pagination info
+ */
+export const getGuestsPaginated = async (options = {}) => {
+  const { page = 1, pageSize = 10, search = "" } = options;
+
+  // Dummy API call - replace with real API later
+  return new Promise((resolve) => {
+    setTimeout(
+      () => {
+        let results = store.guests;
+
+        // Filter by search query
+        if (search.trim()) {
+          const searchQuery = search.toLowerCase();
+          results = results.filter((guest) => guest.name.toLowerCase().includes(searchQuery) || guest.citizenId.toLowerCase().includes(searchQuery));
+        }
+
+        const total = results.length;
+        const totalPages = Math.ceil(total / pageSize);
+        const startIndex = (page - 1) * pageSize;
+        const endIndex = startIndex + pageSize;
+        const paginatedResults = results.slice(startIndex, endIndex);
+
+        resolve({
+          data: paginatedResults,
+          total: total,
+          page: page,
+          pageSize: pageSize,
+          totalPages: totalPages,
+          hasNextPage: page < totalPages,
+          hasPrevPage: page > 1,
+        });
+      },
+      Math.random() * 1000 + 500,
+    ); // Simulate 0.5-1.5 second network delay
+  });
+};
+
+/**
  * Search guests by name or citizen ID
  * @param {string} query - Search query (name or citizen ID)
  * @param {number} limit - Maximum number of results (default: 10 if no query, unlimited if query provided)

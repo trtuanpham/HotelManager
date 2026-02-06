@@ -1,6 +1,5 @@
 <template>
   <div class="guest-avatar-section">
-    <label class="avatar-label">{{ lang.get("guest.citizenIdCard") }}</label>
     <div
       class="avatar-preview"
       @click="triggerFileUpload"
@@ -26,7 +25,6 @@
 
 <script setup>
 import { ref, defineProps, defineEmits, onMounted, onUnmounted } from "vue";
-import { languageController as lang } from "../../controller/languageController";
 import CropImageModal from "./CropImageModal.vue";
 import "@material-design-icons/font";
 
@@ -181,7 +179,6 @@ onUnmounted(() => {
 .guest-avatar-section {
   display: flex;
   flex-direction: column;
-  gap: 12px;
   align-items: center;
 }
 

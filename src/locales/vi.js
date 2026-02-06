@@ -114,13 +114,16 @@ export const langVN = {
     createError: "Lỗi khi thêm khách hàng",
     dateOfBirth: "Ngày sinh",
     rentalCount: "Số lần thuê",
-    lastRentalDate: "Ngày thuê gần nhất",
+    lastRentalDate: "Lần cuối thuê phòng",
+    editGuestTitle: "Chỉnh sửa khách hàng",
+    contacts: "Thông tin liên hệ",
+    note: "Ghi chú",
   },
 
   // Guests Management
   guests: {
-    title: "👥 Quản lý khách hàng",
-    addGuest: "+ Thêm khách",
+    title: "Quản lý khách hàng",
+    addGuest: "Thêm khách",
     addGuestTitle: "Thêm khách hàng mới",
     name: "Tên khách hàng",
     email: "Email",
@@ -129,14 +132,15 @@ export const langVN = {
     add: "Thêm",
     cancel: "Hủy",
     search: "Tìm kiếm khách hàng...",
-    edit: "✏️ Sửa",
-    delete: "🗑️ Xóa",
-    deleteConfirm: "Bạn chắc chắn muốn xóa khách này?",
+    edit: "Sửa",
+    delete: "Xóa",
+    deleteConfirm: "Xóa khách hàng",
     editGuestTitle: "Chỉnh sửa khách hàng",
     update: "Cập nhật",
     updateSuccess: "Cập nhật khách hàng thành công",
     updateError: "Lỗi khi cập nhật khách hàng",
     optional: "(tùy chọn)",
+    noGuests: "Chưa có khách hàng",
   },
 
   // Bookings
@@ -243,6 +247,13 @@ export const langVN = {
     saveError: "Lỗi lưu dữ liệu: ",
     confirm: "Xác nhận",
     add: "Thêm",
+    action: "Thao tác",
+    search: "Tìm",
+    previous: "Trang trước",
+    next: "Trang sau",
+    page: "Trang",
+    showing: "Hiển thị",
+    of: "của",
   },
 
   error: {
