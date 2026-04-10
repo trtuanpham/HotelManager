@@ -3,19 +3,19 @@ import { reactive } from "vue";
 export const hotelStore = reactive({
   // Dummy data cho phòng
   rooms: [
-    { id: 1, number: "8001", type: "Single", status: "Available", priceHourly: 200000, priceDaily: 600000, bookingId: "", group: "Tòa A" },
-    { id: 2, number: "8101", type: "Single", status: "Occupied", priceHourly: 200000, priceDaily: 600000, bookingId: "booking_1", group: "Tòa A" },
-    { id: 3, number: "8201", type: "Single", status: "Available", priceHourly: 200000, priceDaily: 600000, bookingId: "", group: "Tòa A" },
-    { id: 4, number: "8202", type: "Double", status: "Cleaning", priceHourly: 300000, priceDaily: 900000, bookingId: "", group: "Tòa A" },
-    { id: 5, number: "8301", type: "Single", status: "Occupied", priceHourly: 200000, priceDaily: 600000, bookingId: "booking_2", group: "Tòa A" },
-    { id: 6, number: "8302", type: "Double", status: "Available", priceHourly: 300000, priceDaily: 900000, bookingId: "", group: "Tòa A" },
-    { id: 7, number: "8401", type: "Double", status: "Available", priceHourly: 300000, priceDaily: 900000, bookingId: "", group: "Tòa A" },
-    { id: 8, number: "9101", type: "Single", status: "Occupied", priceHourly: 200000, priceDaily: 600000, bookingId: "booking_3", group: "Tòa B" },
-    { id: 9, number: "9201", type: "Single", status: "Available", priceHourly: 200000, priceDaily: 600000, bookingId: "", group: "Tòa B" },
-    { id: 10, number: "9202", type: "Double", status: "Cleaning", priceHourly: 300000, priceDaily: 900000, bookingId: "", group: "Tòa B" },
-    { id: 11, number: "9301", type: "Single", status: "Occupied", priceHourly: 200000, priceDaily: 600000, bookingId: "booking_4", group: "Tòa B" },
-    { id: 12, number: "9302", type: "Double", status: "Available", priceHourly: 300000, priceDaily: 900000, bookingId: "", group: "Tòa B" },
-    { id: 13, number: "9401", type: "Single", status: "Available", priceHourly: 200000, priceDaily: 600000, bookingId: "", group: "Tòa B" },
+    { id: "room_1", number: "8001", type: "Single", status: "Available", priceHourly: 200000, priceDaily: 600000, bookingId: "", group: "Tòa A" },
+    { id: "room_2", number: "8101", type: "Single", status: "Booking", priceHourly: 200000, priceDaily: 600000, bookingId: "booking_1", group: "Tòa A" },
+    { id: "room_3", number: "8201", type: "Single", status: "Available", priceHourly: 200000, priceDaily: 600000, bookingId: "", group: "Tòa A" },
+    { id: "room_4", number: "8202", type: "Double", status: "Cleaning", priceHourly: 300000, priceDaily: 900000, bookingId: "", group: "Tòa A" },
+    { id: "room_5", number: "8301", type: "Single", status: "Booking", priceHourly: 200000, priceDaily: 600000, bookingId: "booking_2", group: "Tòa A" },
+    { id: "room_6", number: "8302", type: "Double", status: "Available", priceHourly: 300000, priceDaily: 900000, bookingId: "", group: "Tòa A" },
+    { id: "room_7", number: "8401", type: "Double", status: "Available", priceHourly: 300000, priceDaily: 900000, bookingId: "", group: "Tòa A" },
+    { id: "room_8", number: "9101", type: "Single", status: "Booking", priceHourly: 200000, priceDaily: 600000, bookingId: "booking_3", group: "Tòa B" },
+    { id: "room_9", number: "9201", type: "Single", status: "Available", priceHourly: 200000, priceDaily: 600000, bookingId: "", group: "Tòa B" },
+    { id: "room_10", number: "9202", type: "Double", status: "Cleaning", priceHourly: 300000, priceDaily: 900000, bookingId: "", group: "Tòa B" },
+    { id: "room_11", number: "9301", type: "Single", status: "Booking", priceHourly: 200000, priceDaily: 600000, bookingId: "", group: "Tòa B" },
+    { id: "room_12", number: "9302", type: "Double", status: "Available", priceHourly: 300000, priceDaily: 900000, bookingId: "", group: "Tòa B" },
+    { id: "room_13", number: "9401", type: "Single", status: "Maintenance", priceHourly: 200000, priceDaily: 600000, bookingId: "", group: "Tòa B" },
   ],
 
   // Dummy data cho khách hàng
@@ -121,7 +121,7 @@ export const hotelStore = reactive({
     {
       id: "booking_4",
       guestIds: ["guest_4"],
-      roomNumber: "",
+      roomNumber: "8401",
       checkIn: "2026-02-01 12:00",
       checkOut: "2026-02-05 12:00",
       bookingType: "daily",
@@ -129,8 +129,8 @@ export const hotelStore = reactive({
       totalDayDuration: 4,
       pricePerUnit: 600000,
       totalPrice: 7500000,
-      totalPrepaid: 2500000,
-      status: "Pending",
+      totalPrepaid: 7500000,
+      status: "Checked Out",
     },
   ],
 

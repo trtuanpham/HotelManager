@@ -1,6 +1,22 @@
 import { hotelStore } from "../stores/hotelStore";
 
 /**
+ * Get all bookings (simulated API call)
+ * @returns {Promise<Array>} Array of all bookings sorted by newest first
+ */
+export const getAllBookings = async () => {
+  // Simulated API call - replace with real API later
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      const bookings = hotelStore.bookings.sort((a, b) => {
+        return new Date(b.checkIn) - new Date(a.checkIn);
+      });
+      resolve(bookings);
+    }, 500); // Simulate 500ms network delay
+  });
+};
+
+/**
  * Get upcoming bookings with guest information
  * TODO: Replace with actual API call later
  */
@@ -11,6 +27,26 @@ export const getUpcomingBookings = () => {
       ...booking,
       guestName: guest?.name || "-",
     };
+  });
+};
+
+/**
+ * Create a new booking (simulated API call)
+ * @param {Object} bookingData - The booking data
+ * @returns {Promise<Object>} Created booking
+ */
+export const createBooking = async (bookingData) => {
+  // Simulated API call - replace with real API later
+  return new Promise((resolve, reject) => {
+    setTimeout(() => {
+      try {
+        bookingData.id = `booking_${Date.now()}`;
+        const booking = hotelStore.addBooking(bookingData);
+        resolve(booking);
+      } catch (error) {
+        reject(error);
+      }
+    }, 1000); // Simulate 1s network delay
   });
 };
 
@@ -87,7 +123,7 @@ export const getBookingById = async (bookingId) => {
     setTimeout(() => {
       const booking = hotelStore.bookings.find((b) => b.id === bookingId);
       resolve(booking || null);
-    }, 3000); // Simulate 300ms network delay
+    }, 1000);
   });
 };
 

@@ -72,34 +72,8 @@
     </div> -->
 
     <div class="dashboard-section full">
-      <h2>{{ lang.get("dashboard.upcomingBookings") }}</h2>
-      <table class="data-table">
-        <thead>
-          <tr>
-            <th>{{ lang.get("dashboard.guest") }}</th>
-            <th>{{ lang.get("dashboard.room") }}</th>
-            <th>{{ lang.get("dashboard.checkIn") }}</th>
-            <th>{{ lang.get("dashboard.checkOut") }}</th>
-            <th>{{ lang.get("dashboard.totalPrice") }}</th>
-            <th>{{ lang.get("dashboard.status") }}</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="booking in upcomingBookings" :key="booking.id" class="booking-row" @click="openBookingDetails(booking)">
-            <td>{{ booking.guestName }}</td>
-            <td>{{ booking.roomNumber || "-" }}</td>
-            <td>{{ formatDate(booking.checkIn) }}</td>
-            <td>{{ formatDate(booking.checkOut) }}</td>
-            <td class="price">{{ formatPrice(booking.totalPrice) }}</td>
-            <td>
-              <span :class="`status-badge ${booking.status.toLowerCase()}`">{{ booking.status }}</span>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+      <UpcomingBookingsList />
     </div>
-
-    <BookingDetailsModal ref="bookingDetailsModalRef" />
   </div>
 </template>
 
@@ -107,12 +81,10 @@
 import { ref, computed, onMounted } from "vue";
 import { hotelStore as store } from "../stores/hotelStore";
 import RoomStatusGrid from "../components/RoomStatusGrid.vue";
-import BookingDetailsModal from "../components/modals/BookingDetailsModal.vue";
-import { getUpcomingBookings } from "../services/bookingService";
+import UpcomingBookingsList from "../components/UpcomingBookingsList.vue";
 import { getAllRooms } from "../services/roomService";
 import { languageController as lang } from "../controller/languageController";
 
-const bookingDetailsModalRef = ref(null);
 const rooms = ref([]);
 const isLoadingRooms = ref(true);
 
@@ -135,25 +107,8 @@ const maintenanceRooms = computed(() => store.rooms.filter((r) => r.status === "
 
 const recentGuests = computed(() => store.guests.slice(0, 5));
 
-const upcomingBookings = computed(() => getUpcomingBookings());
-
 const formatDate = (date) => {
   return new Date(date).toLocaleDateString("vi-VN");
-};
-
-const formatPrice = (price) => {
-  return new Intl.NumberFormat("vi-VN", {
-    style: "currency",
-    currency: "VND",
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(price);
-};
-
-const openBookingDetails = (booking) => {
-  if (bookingDetailsModalRef.value) {
-    bookingDetailsModalRef.value.openModal(booking);
-  }
 };
 </script>
 

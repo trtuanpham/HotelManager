@@ -1,142 +1,134 @@
 <template>
   <div class="rooms-manager">
     <div class="header">
-      <h1>{{ lang.rooms.title }}</h1>
-      <button class="btn-primary" @click="showAddForm = true">{{ lang.rooms.addRoom }}</button>
-    </div>
-
-    <div v-if="showAddForm" class="modal-overlay">
-      <div class="modal">
-        <h2>{{ lang.rooms.addRoomTitle }}</h2>
-        <form @submit.prevent="addRoom">
-          <input v-model="newRoom.number" :placeholder="lang.rooms.roomNumber" required />
-          <select v-model="newRoom.type" required>
-            <option value="">{{ lang.rooms.selectRoomType }}</option>
-            <option value="Single">{{ lang.rooms.single }}</option>
-            <option value="Double">{{ lang.rooms.double }}</option>
-            <option value="Suite">{{ lang.rooms.suite }}</option>
-          </select>
-          <input v-model.number="newRoom.price" type="number" :placeholder="lang.rooms.price" required />
-          <div class="modal-buttons">
-            <button type="submit" class="btn-primary">{{ lang.rooms.add }}</button>
-            <button type="button" class="btn-secondary" @click="showAddForm = false">{{ lang.rooms.cancel }}</button>
-          </div>
-        </form>
-      </div>
+      <h1><i class="material-icons">meeting_room</i> {{ lang.get("rooms.title") }}</h1>
+      <button class="btn-primary" @click="openCreateModal"><i class="material-icons">add</i> {{ lang.get("rooms.addRoom") }}</button>
     </div>
 
     <div class="filters">
-      <input 
-        v-model="searchTerm" 
-        type="text" 
-        :placeholder="lang.rooms.search"
-        class="search-input"
-      />
+      <input v-model="searchTerm" type="text" :placeholder="lang.get('rooms.search')" class="search-input" />
       <select v-model="filterStatus" class="filter-select">
-        <option value="">{{ lang.rooms.allStatus }}</option>
-        <option value="Available">{{ lang.rooms.available }}</option>
-        <option value="Occupied">{{ lang.rooms.occupied }}</option>
-        <option value="Maintenance">{{ lang.rooms.maintenance }}</option>
+        <option value="">{{ lang.get("rooms.allStatus") }}</option>
+        <option value="Available">{{ lang.get("rooms.available") }}</option>
+        <option value="Booking">{{ lang.get("rooms.booking") }}</option>
+        <option value="Maintenance">{{ lang.get("rooms.maintenance") }}</option>
+      </select>
+      <select v-model="filterGroup" class="filter-select">
+        <option value="">{{ lang.get("rooms.allGroups") }}</option>
+        <option v-for="group in allGroups" :key="group" :value="group">
+          {{ group }}
+        </option>
       </select>
     </div>
 
-    <div class="rooms-grid">
-      <div v-for="room in filteredRooms" :key="room.id" class="room-card">
-        <div class="room-header">
-          <h3>{{ lang.rooms.room }} {{ room.number }}</h3>
-          <span :class="`status-badge ${room.status.toLowerCase()}`">{{ room.status }}</span>
-        </div>
-        <div class="room-details">
-          <p><strong>{{ lang.rooms.type }}:</strong> {{ room.type }}</p>
-          <p><strong>{{ lang.rooms.price }}:</strong> {{ formatPrice(room.price) }}{{ lang.rooms.perNight }}</p>
-          <p v-if="room.guest"><strong>{{ lang.rooms.guest }}:</strong> {{ room.guest }}</p>
-        </div>
-        <div class="room-actions">
-          <button class="btn-small" @click="editRoom(room)">{{ lang.rooms.edit }}</button>
-          <button class="btn-small btn-danger" @click="deleteRoom(room.id)">{{ lang.rooms.delete }}</button>
-        </div>
-      </div>
-    </div>
-
-    <div v-if="editingRoom" class="modal-overlay">
-      <div class="modal">
-        <h2>{{ lang.rooms.editRoomTitle }}</h2>
-        <form @submit.prevent="updateRoom">
-          <input v-model="editingRoom.number" :placeholder="lang.rooms.roomNumber" required />
-          <select v-model="editingRoom.type" required>
-            <option value="Single">{{ lang.rooms.single }}</option>
-            <option value="Double">{{ lang.rooms.double }}</option>
-            <option value="Suite">{{ lang.rooms.suite }}</option>
-          </select>
-          <select v-model="editingRoom.status" required>
-            <option value="Available">{{ lang.rooms.available }}</option>
-            <option value="Occupied">{{ lang.rooms.occupied }}</option>
-            <option value="Maintenance">{{ lang.rooms.maintenance }}</option>
-          </select>
-          <input v-model.number="editingRoom.price" type="number" :placeholder="lang.rooms.price" required />
-          <input v-model="editingRoom.guest" :placeholder="lang.rooms.guest" />
-          <div class="modal-buttons">
-            <button type="submit" class="btn-primary">{{ lang.rooms.update }}</button>
-            <button type="button" class="btn-secondary" @click="editingRoom = null">{{ lang.rooms.cancel }}</button>
-          </div>
-        </form>
-      </div>
-    </div>
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>{{ lang.get("rooms.roomNumber") }}</th>
+          <th>{{ lang.get("rooms.type") }}</th>
+          <th>{{ lang.get("rooms.group") }}</th>
+          <th>{{ lang.get("rooms.status") }}</th>
+          <th>{{ lang.get("rooms.priceHourly") }}</th>
+          <th>{{ lang.get("rooms.priceDaily") }}</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr v-if="isLoading" class="loading-row">
+          <td colspan="6" class="loading-cell">{{ lang.get("common.loading") }}</td>
+        </tr>
+        <tr v-else-if="rooms.length === 0" class="empty-row">
+          <td colspan="6" class="empty-cell">{{ lang.get("rooms.noRooms") }}</td>
+        </tr>
+        <tr v-for="room in rooms" v-else :key="room.id" class="room-row" @click="openEditModal(room)">
+          <td>{{ room.number }}</td>
+          <td>{{ room.type }}</td>
+          <td>{{ room.group || "-" }}</td>
+          <td>
+            <span :class="`status-badge ${room.status.toLowerCase()}`">{{ room.status }}</span>
+          </td>
+          <td>{{ formatCurrency(room.priceHourly) }}</td>
+          <td>{{ formatCurrency(room.priceDaily) }}</td>
+        </tr>
+      </tbody>
+    </table>
   </div>
+
+  <RoomDetailsModal ref="roomDetailsModalRef" @room-created="onRoomSaved" @room-updated="onRoomSaved" />
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
-import { hotelStore as store } from '../stores/hotelStore'
-import { langVN as lang } from '../locales/vi'
+import { ref, computed, onMounted, watch } from "vue";
+import { languageController as lang } from "../controller/languageController";
+import { getAllRooms } from "../services/roomService";
+import { hotelStore as store } from "../stores/hotelStore";
+import { useCurrency } from "../composables/useCurrency";
+import RoomDetailsModal from "../components/modals/RoomDetailsModal.vue";
+import "@material-design-icons/font";
 
-const showAddForm = ref(false)
-const editingRoom = ref(null)
-const searchTerm = ref('')
-const filterStatus = ref('')
-const newRoom = ref({
-  number: '',
-  type: 'Double',
-  price: 0
-})
+const { formatCurrency } = useCurrency();
 
-const filteredRooms = computed(() => {
-  return store.rooms.filter(room => {
-    const matchesSearch = room.number.includes(searchTerm.value)
-    const matchesStatus = !filterStatus.value || room.status === filterStatus.value
-    return matchesSearch && matchesStatus
-  })
-})
+const searchTerm = ref("");
+const filterStatus = ref("");
+const filterGroup = ref("");
+const isLoading = ref(false);
+const allRooms = ref([]);
+const allGroups = ref([]);
+const roomDetailsModalRef = ref(null);
 
-const addRoom = () => {
-  store.addRoom(newRoom.value)
-  newRoom.value = { number: '', type: 'Double', price: 0 }
-  showAddForm.value = false
-}
+const rooms = computed(() => {
+  let filtered = allRooms.value;
 
-const deleteRoom = (id) => {
-  if (confirm(lang.rooms.deleteConfirm)) {
-    store.deleteRoom(id)
+  // Filter by status
+  if (filterStatus.value) {
+    filtered = filtered.filter((r) => r.status === filterStatus.value);
   }
-}
 
-const editRoom = (room) => {
-  editingRoom.value = { ...room }
-}
+  // Filter by group
+  if (filterGroup.value) {
+    filtered = filtered.filter((r) => r.group === filterGroup.value);
+  }
 
-const updateRoom = () => {
-  store.updateRoom(editingRoom.value.id, editingRoom.value)
-  editingRoom.value = null
-}
+  // Filter by search term
+  if (searchTerm.value) {
+    const searchLower = searchTerm.value.toLowerCase();
+    filtered = filtered.filter((r) => r.number.toLowerCase().includes(searchLower));
+  }
 
-const formatPrice = (price) => {
-  return new Intl.NumberFormat('vi-VN', {
-    style: 'currency',
-    currency: 'VND',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0
-  }).format(price)
-}
+  return filtered;
+});
+
+const loadAllRooms = async () => {
+  isLoading.value = true;
+  try {
+    const result = await getAllRooms("", "");
+    allRooms.value = result;
+
+    // Extract unique groups
+    const groups = new Set(result.map((r) => r.group).filter((g) => g));
+    allGroups.value = Array.from(groups).sort();
+  } catch (error) {
+    console.error("Error loading rooms:", error);
+  } finally {
+    isLoading.value = false;
+  }
+};
+
+const openCreateModal = () => {
+  roomDetailsModalRef.value?.openModal(null);
+};
+
+const openEditModal = (room) => {
+  roomDetailsModalRef.value?.openModal(room);
+};
+
+const onRoomSaved = () => {
+  // Reload all rooms after create/update
+  loadAllRooms();
+};
+
+onMounted(() => {
+  loadAllRooms();
+});
 </script>
 
 <style scoped>
@@ -155,20 +147,36 @@ const formatPrice = (price) => {
   margin: 0;
   color: #333;
   font-size: 32px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.header h1 i {
+  font-size: 36px;
 }
 
 .filters {
   display: flex;
   gap: 15px;
-  margin-bottom: 30px;
+  margin-bottom: 20px;
+  align-items: flex-end;
+  background: white;
+  padding: 16px;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
 .search-input,
 .filter-select {
-  padding: 10px 15px;
-  border: 1px solid #ddd;
+  padding: 12px 15px;
+  border: 1px solid #e5e7eb;
   border-radius: 8px;
   font-size: 14px;
+  background: white;
+  color: #1f2937;
+  transition: all 0.2s ease;
+  font-family: inherit;
 }
 
 .search-input {
@@ -176,81 +184,130 @@ const formatPrice = (price) => {
   min-width: 200px;
 }
 
-.rooms-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 20px;
+.filter-select {
+  min-width: 180px;
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%231f2937' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 36px;
 }
 
-.room-card {
+.search-input:focus,
+.filter-select:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.filter-select:hover:not(:disabled) {
+  border-color: #667eea;
+}
+
+.search-input::placeholder {
+  color: #9ca3af;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
   background: white;
   border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   overflow: hidden;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
-.room-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+.data-table thead {
+  background: #f5f7fa;
 }
 
-.room-header {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
+.data-table th {
   padding: 15px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.room-header h3 {
-  margin: 0;
-  font-size: 18px;
-}
-
-.status-badge {
-  padding: 4px 12px;
-  border-radius: 20px;
-  font-size: 12px;
+  text-align: left;
   font-weight: 600;
-}
-
-.status-badge.available {
-  background: rgba(67, 233, 123, 0.2);
-  color: #43e97b;
-}
-
-.status-badge.occupied {
-  background: rgba(255, 107, 107, 0.2);
-  color: #ff6b6b;
-}
-
-.status-badge.maintenance {
-  background: rgba(255, 165, 2, 0.2);
-  color: #ffa502;
-}
-
-.room-details {
-  padding: 15px;
-}
-
-.room-details p {
-  margin: 8px 0;
   color: #666;
+  border-bottom: 2px solid #e0e0e0;
   font-size: 14px;
 }
 
-.room-actions {
-  display: flex;
-  gap: 10px;
+.data-table td {
   padding: 15px;
-  background: #f9f9f9;
-  border-top: 1px solid #e0e0e0;
+  border-bottom: 1px solid #e0e0e0;
+  color: #333;
+  font-size: 14px;
+}
+
+.data-table tbody tr:hover {
+  background: #fafafa;
+}
+
+.room-row {
+  transition: background 0.15s ease;
+  cursor: pointer;
+}
+
+.room-row:hover {
+  background: #f3f4f6;
+}
+
+.status-badge {
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  display: inline-block;
+}
+
+.status-badge.available {
+  background: #667eea;
+  color: #ffffff;
+}
+
+.status-badge.booking {
+  background: #10b981;
+  color: #ffffff;
+}
+
+.status-badge.maintenance {
+  background: #ef4444;
+  color: #ffffff;
+}
+.status-badge.cleaning {
+  background: #f59e0b;
+  color: #ffffff;
+}
+
+.actions-cell {
+  display: flex;
+  gap: 8px;
+}
+
+.btn-primary {
+  padding: 12px 20px;
+  background: #667eea;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.btn-primary:hover {
+  background: #5568d3;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.btn-primary:active {
+  transform: translateY(1px);
 }
 
 .btn-small {
-  flex: 1;
   padding: 8px 12px;
   background: #667eea;
   color: white;
@@ -258,19 +315,35 @@ const formatPrice = (price) => {
   border-radius: 6px;
   cursor: pointer;
   font-size: 13px;
-  transition: background 0.3s ease;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 40px;
+  justify-content: center;
+}
+
+.btn-small i {
+  font-size: 16px;
 }
 
 .btn-small:hover {
   background: #5568d3;
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.2);
+}
+
+.btn-small:active {
+  transform: translateY(1px);
 }
 
 .btn-small.btn-danger {
-  background: #ff6b6b;
+  background: #ef4444;
 }
 
 .btn-small.btn-danger:hover {
-  background: #ee5a52;
+  background: #dc2626;
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.2);
 }
 
 .modal-overlay {
@@ -308,9 +381,18 @@ const formatPrice = (price) => {
 .modal input,
 .modal select {
   padding: 10px 15px;
-  border: 1px solid #ddd;
+  border: 1px solid #e5e7eb;
   border-radius: 8px;
   font-size: 14px;
+  background: white;
+  color: #1f2937;
+}
+
+.modal input:focus,
+.modal select:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
 }
 
 .modal-buttons {
@@ -319,39 +401,36 @@ const formatPrice = (price) => {
   margin-top: 10px;
 }
 
-.btn-primary {
-  padding: 10px 20px;
-  background: #667eea;
-  color: white;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 14px;
-  font-weight: 600;
-  transition: background 0.3s ease;
-}
-
-.btn-primary:hover {
-  background: #5568d3;
-}
-
 .btn-secondary {
   padding: 10px 20px;
-  background: #e0e0e0;
+  background: #e5e7eb;
   color: #333;
   border: none;
   border-radius: 8px;
   cursor: pointer;
   font-size: 14px;
   font-weight: 600;
-  transition: background 0.3s ease;
+  transition: all 0.2s ease;
 }
 
 .btn-secondary:hover {
-  background: #d0d0d0;
+  background: #d1d5db;
+}
+
+.btn-secondary:active {
+  transform: translateY(1px);
 }
 
 .modal-buttons button {
   flex: 1;
+}
+
+.loading-row .loading-cell,
+.empty-row .empty-cell {
+  text-align: center;
+  padding: 40px 15px;
+  color: #999;
+  border-bottom: 1px solid #e0e0e0;
+  font-size: 14px;
 }
 </style>

@@ -30,10 +30,6 @@ const props = defineProps({
     type: String,
     required: true,
   },
-  title: {
-    type: String,
-    default: "",
-  },
   maxWidth: {
     type: String,
     default: "1000px",

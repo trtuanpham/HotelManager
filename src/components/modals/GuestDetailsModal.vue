@@ -25,12 +25,7 @@
                   }
                 "
               />
-              <div v-else class="avatar-view">
-                <img v-if="formData.avatar" :src="formData.avatar" alt="Avatar" class="avatar-image" />
-                <div v-else class="avatar-placeholder">
-                  {{ getInitials(formData.name) }}
-                </div>
-              </div>
+              <AvatarSection v-else :guest-data="guestData" />
             </div>
           </div>
 
@@ -138,12 +133,13 @@
 </template>
 
 <script setup>
-import { ref } from "vue";
+import { ref, computed } from "vue";
 import { languageController as lang } from "../../controller/languageController";
 import { NATIONALITIES } from "../../data/constants";
 import { updateGuest, createGuest } from "../../services/guestService";
 import ModalBase from "./ModalBase.vue";
 import PhotoEditor from "./PhotoEditor.vue";
+import AvatarSection from "./AvatarSection.vue";
 import MessageModal from "./MessageModal.vue";
 import "../../style/common.css";
 
@@ -154,7 +150,6 @@ const isCreateMode = ref(false);
 const messageModalRef = ref(null);
 const currentGuestId = ref(null);
 const originalGuestData = ref(null);
-const contactTypes = ref(["Điện thoại", "Email", "Webchat", "Zalo", "Facebook", "Telegram", "WhatsApp", "Line"]);
 const validationErrors = ref({
   name: false,
   citizenId: false,
@@ -380,19 +375,14 @@ defineExpose({
   closeModal,
 });
 
+const guestData = computed(() => ({
+  imageUrl: formData.value.avatar,
+  name: formData.value.name,
+}));
+
 const formatDate = (dateString) => {
   if (!dateString) return "";
   return new Date(dateString).toLocaleDateString("vi-VN");
-};
-
-const getInitials = (name) => {
-  if (!name) return "";
-  return name
-    .split(" ")
-    .map((word) => word[0])
-    .join("")
-    .toUpperCase()
-    .substring(0, 2);
 };
 </script>
 
@@ -405,34 +395,7 @@ const getInitials = (name) => {
 .avatar-container {
   display: flex;
   justify-content: center;
-}
-
-.avatar-view {
   width: 250px;
-  height: 250px;
-  border-radius: 12px;
-  overflow: hidden;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-}
-
-.avatar-image {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.avatar-placeholder {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  font-size: 48px;
-  font-weight: bold;
 }
 
 .form-content {
@@ -643,7 +606,7 @@ const getInitials = (name) => {
 .view-field {
   padding: 10px 12px;
   background: #ffffff;
-  border: 1px solid #bdbdbd;
+  border: 1px solid #dadada;
   border-radius: 6px;
   color: #000000;
   font-size: 14px;

@@ -1,304 +1,118 @@
 <template>
   <CreateGuestModal ref="createGuestModalRef" />
-  <ModalBase :is-visible="isVisible" modal-id="booking-modal" title="Tạo đặt phòng mới" max-width="550px" @close="closeModal">
-    <div class="modal-body">
-      <div class="room-info-box">
-        <h4>{{ lang.createBooking?.roomInfo }}:</h4>
-        <div class="room-info-grid">
-          <div class="room-info-item">
-            <span class="label">{{ lang.dashboard?.room }}:</span>
-            <span class="value">{{ selectedRoom ? formData.roomNumber : "..." }}</span>
-          </div>
-          <div class="room-info-item">
-            <span class="label">{{ lang.createBooking?.roomType }}:</span>
-            <span class="value">{{ selectedRoom ? selectedRoom.type : "..." }}</span>
-          </div>
-          <div class="room-info-item">
-            <span class="label">{{ lang.createBooking?.hourlyPrice }}:</span>
-            <span class="value">{{ selectedRoom ? selectedRoom.priceHourly?.toLocaleString("vi-VN") + " VND/giờ" : "..." }}</span>
-          </div>
-          <div class="room-info-item">
-            <span class="label">{{ lang.createBooking?.dailyPrice }}:</span>
-            <span class="value">{{ selectedRoom ? selectedRoom.priceDaily?.toLocaleString("vi-VN") + " VND/đêm" : "..." }}</span>
-          </div>
-        </div>
+  <BookingDetailsModal ref="bookingDetailsModalRef" />
+  <MessageModal ref="messageModalRef" />
+  <ModalBase :is-visible="isVisible" modal-id="booking-modal" max-width="570px" @close="closeModal">
+    <template #title>
+      <h3>{{ lang.get("booking.createTitle") }}</h3>
+    </template>
+
+    <template #content>
+      <!-- Loading Indicator -->
+      <div v-if="isLoadingRoom" class="loading-container">
+        <div class="spinner"></div>
+        <p>{{ lang.get("common.loading") }}</p>
       </div>
 
-      <div class="form-group">
-        <div class="guest-header">
-          <label>{{ lang.dashboard?.guest }}<span class="required">*</span></label>
-          <button type="button" class="btn-new-guest" @click="openCreateGuestModal">+ Tạo mới</button>
-        </div>
-        <div class="guest-search-box">
-          <input
-            v-model="guestSearchQuery"
-            type="text"
-            class="input-field"
-            placeholder="Tìm kiếm khách hàng..."
-            @input="showGuestDropdown = true"
-            @focus="showGuestDropdown = true"
-            @blur="handleGuestSearchBlur"
-            @keydown.esc="showGuestDropdown = false"
-          />
-          <div v-show="showGuestDropdown" class="guest-dropdown">
-            <div v-if="isSearching" class="dropdown-empty">Đang tìm kiếm...</div>
-            <div v-else-if="filteredGuests.length === 0" class="dropdown-empty">Không tìm thấy khách hàng</div>
-            <div v-for="guest in filteredGuests" :key="guest.id" class="dropdown-item" @click="selectGuest(guest)">
-              <div class="dropdown-guest-info">
-                <div class="guest-name">{{ guest.name }}</div>
-                <small class="guest-citizen-id">ID: {{ guest.citizenId }}</small>
-              </div>
-            </div>
-          </div>
-          <div v-if="selectedGuestName" class="guest-selected">✓ {{ selectedGuestName }}</div>
-        </div>
+      <!-- Room Info Section -->
+      <RoomInfoSection v-if="!isLoadingRoom" :room-number="booking.roomNumber" :room-data="selectedRoom" />
 
-        <div v-if="selectedGuestName" class="guest-info-details">
-          <div class="guest-avatar-display">
-            <img :src="guestAvatarUrl" alt="Guest Avatar" class="guest-avatar-img" />
-          </div>
-          <div class="guest-info-section">
-            <div class="info-row">
-              <div class="info-col">
-                <small class="label">Email:</small>
-                <small class="value">{{ selectedGuestEmail || "---" }}</small>
-              </div>
-              <div class="info-col">
-                <small class="label">Quốc tịch:</small>
-                <small class="value">{{ selectedGuestNationality || "---" }}</small>
-              </div>
-            </div>
-            <div class="info-row">
-              <div class="info-col">
-                <small class="label">Số điện thoại:</small>
-                <small class="value">{{ selectedGuestPhone || "---" }}</small>
-              </div>
-              <div class="info-col">
-                <small class="label">ID công dân:</small>
-                <small class="value">{{ selectedGuestCitizenId || "---" }}</small>
-              </div>
-            </div>
-            <div class="info-row">
-              <div class="info-col">
-                <small class="label">Ngày sinh:</small>
-                <small class="value">{{ selectedGuestDateOfBirth || "---" }}</small>
-              </div>
-              <div class="info-col">
-                <small class="label">Ngày thuê gần nhất:</small>
-                <small class="value">{{ selectedGuestLastRentalDate || "---" }}</small>
-              </div>
-            </div>
-          </div>
-        </div>
+      <!-- Guest Info Section -->
+      <GuestInfoSection v-if="!isLoadingRoom" :guest-ids="booking.guestIds" @update-guests="handleGuestUpdate" />
+
+      <!-- Time Duration Picker Section -->
+      <div v-if="!isLoadingRoom" class="details-section">
+        <h4 class="section-title">{{ lang.get("booking.stayDuration") }}</h4>
+        <TimeDurationPicker :check-in="new Date(booking.checkIn)" :check-out="new Date(booking.checkOut)" :booking-type="booking.bookingType" @update:time="handleTimeUpdate" />
       </div>
 
-      <div class="form-row">
-        <div class="form-group">
-          <label>{{ lang.createBooking?.checkIn }}<span class="required">*</span></label>
-          <input :value="formatDateTimeLocal(formData.checkIn)" @input="(e) => (formData.checkIn = parseDateTime(e.target.value))" type="datetime-local" class="input-field" />
-        </div>
-
-        <div class="form-group">
-          <label>{{ lang.createBooking?.checkOut }}<span class="required">*</span></label>
-          <input :value="formatDateTimeLocal(formData.checkOut)" @input="(e) => (formData.checkOut = parseDateTime(e.target.value))" type="datetime-local" class="input-field" />
-        </div>
-      </div>
-
-      <div class="quick-duration-buttons">
-        <button @click="setQuickDuration(1, 'hour')" class="quick-btn quick-btn-hour">{{ lang.createBooking?.quickHour.replace("{hour}", "1") }}</button>
-        <button @click="setQuickDuration(2, 'hour')" class="quick-btn quick-btn-hour">{{ lang.createBooking?.quickHour.replace("{hour}", "2") }}</button>
-        <button @click="setQuickDuration(3, 'hour')" class="quick-btn quick-btn-hour">{{ lang.createBooking?.quickHour.replace("{hour}", "3") }}</button>
-        <button @click="setQuickDuration(1, 'day')" class="quick-btn quick-btn-day">{{ lang.createBooking?.quickDay.replace("{day}", "1") }}</button>
-        <button @click="setQuickDuration(2, 'day')" class="quick-btn quick-btn-day">{{ lang.createBooking?.quickDay.replace("{day}", "2") }}</button>
-        <button @click="setQuickDuration(3, 'day')" class="quick-btn quick-btn-day">{{ lang.createBooking?.quickDay.replace("{day}", "3") }}</button>
-      </div>
-
-      <div class="form-group">
-        <label>{{ lang.createBooking?.bookingType }}<span class="required">*</span></label>
-        <select v-model="formData.bookingType" class="input-field">
-          <option :value="BOOKING_TYPES.HOURLY">{{ lang.createBooking?.hourly }}</option>
-          <option :value="BOOKING_TYPES.DAILY">{{ lang.createBooking?.daily }}</option>
-        </select>
-      </div>
-
-      <div class="form-group">
-        <label>{{ lang.createBooking?.pricePerUnit }} (VND/{{ formData.bookingType === "hourly" ? "giờ" : "đêm" }})</label>
-        <input
-          :value="formData.pricePerUnit ? formData.pricePerUnit.toLocaleString('vi-VN') : ''"
-          @input="(e) => (formData.pricePerUnit = parseInt(e.target.value.replace(/\D/g, '')) || 0)"
-          type="text"
-          class="input-field"
-        />
-        <small v-if="formData.bookingType === BOOKING_TYPES.HOURLY && numberOfHours > 0" class="price-info"
-          >{{ numberOfHours }} giờ × {{ formData.pricePerUnit?.toLocaleString("vi-VN") }} VND/giờ</small
-        >
-        <small v-else-if="formData.bookingType === BOOKING_TYPES.DAILY && numberOfNights > 0" class="price-info"
-          >{{ numberOfNights }} đêm × {{ formData.pricePerUnit?.toLocaleString("vi-VN") }} VND/đêm</small
-        >
-      </div>
-
-      <div class="form-group">
-        <label>{{ lang.createBooking?.totalPrice }} (VND)</label>
-        <input :value="calculatedTotalPrice ? calculatedTotalPrice.toLocaleString('vi-VN') : ''" type="text" class="input-field" disabled />
-      </div>
-    </div>
+      <!-- Pricing Section -->
+      <PricingSection v-if="!isLoadingRoom" :booking="booking" @update:pricePerUnit="handlePriceUpdate" />
+    </template>
 
     <template #footer>
-      <div class="modal-footer">
-        <button class="btn btn-secondary" @click="closeModal">{{ lang.confirmDialog?.cancel }}</button>
-        <button class="btn btn-primary" @click="submitBooking">{{ lang.createBooking?.createButton }}</button>
-      </div>
+      <button class="btn btn-secondary" @click="closeModal" :disabled="isSubmitting">{{ lang.get("common.cancel") }}</button>
+      <button class="btn btn-primary" @click="submitBooking" :disabled="isLoadingRoom || isSubmitting">
+        <span v-if="isSubmitting" class="btn-loading">
+          <span class="spinner-small"></span>
+          {{ lang.get("common.booking") }}
+        </span>
+        <span v-else>{{ lang.get("booking.createButton") }}</span>
+      </button>
     </template>
   </ModalBase>
 </template>
 
 <script setup>
 import { ref, computed, watch } from "vue";
-import { hotelStore as store } from "../../stores/hotelStore";
-import { langVN as lang } from "../../locales/vi";
-import { BOOKING_TYPES, DEFAULT_AVATAR_SVG } from "../../data/constants";
+import { languageController as lang } from "../../controller/languageController";
+import { BOOKING_TYPES, BOOKING_EVENT_TYPES } from "../../data/constants";
 import { calculateBookingHours, calculateBookingDays } from "../../services/calculatorTime";
-import { searchGuests, getTopGuests } from "../../services/guestService";
-import { getRoomByNumber } from "../../services/roomService";
+import { getRoomByNumber, updateBookingRoom } from "../../services/roomService";
+import { createBooking } from "../../services/bookingService";
+import { addBookingEvent } from "../../services/bookingEventService";
 import ModalBase from "./ModalBase.vue";
 import CreateGuestModal from "./CreateGuestModal.vue";
+import BookingDetailsModal from "./BookingDetailsModal.vue";
+import MessageModal from "./MessageModal.vue";
+import RoomInfoSection from "./booking-details/RoomInfoSection.vue";
+import GuestInfoSection from "./booking-details/GuestInfoSection.vue";
+import TimeDurationPicker from "./booking-details/TimeDurationPicker.vue";
+import PricingSection from "./booking-details/PricingSection.vue";
 
 const isVisible = ref(false);
-const guestSearchQuery = ref("");
-const showGuestDropdown = ref(false);
-const filteredGuests = ref([]);
-const isSearching = ref(false);
-const selectedGuestName = ref("");
-const selectedGuestPhone = ref("");
-const selectedGuestCitizenId = ref("");
-const selectedGuestEmail = ref("");
-const selectedGuestNationality = ref("");
-const selectedGuestDateOfBirth = ref("");
-const selectedGuestLastRentalDate = ref("");
-const selectedGuestAvatar = ref("");
-const createGuestModalRef = ref(null);
-const selectedRoom = ref(null);
 const isLoadingRoom = ref(false);
-const formData = ref({
+const isSubmitting = ref(false);
+const selectedRoom = ref(null);
+const bookingDetailsModalRef = ref(null);
+const messageModalRef = ref(null);
+const booking = ref({
   roomNumber: "",
-  guestId: "",
+  guestIds: [],
   checkIn: null,
   checkOut: null,
   pricePerUnit: 0,
   totalPrice: 0,
   bookingType: BOOKING_TYPES.DAILY,
-});
-
-const availableGuests = computed(() => store.guests);
-
-// Watch room number change and fetch room data
-watch(
-  () => formData.value.roomNumber,
-  async (newRoomNumber) => {
-    if (!newRoomNumber) {
-      selectedRoom.value = null;
-      return;
-    }
-
-    isLoadingRoom.value = true;
-    try {
-      const room = await getRoomByNumber(newRoomNumber);
-      selectedRoom.value = room;
-    } catch (error) {
-      console.error("Error loading room:", error);
-      selectedRoom.value = null;
-    } finally {
-      isLoadingRoom.value = false;
-    }
-  },
-);
-
-// watch checkin and checkout to update total price
-watch([() => formData.value.checkIn, () => formData.value.checkOut], ([newCheckIn, newCheckOut]) => {
-  // if >4 hours, switch to daily book
-  const hoursDiff = calculateBookingHours(newCheckIn, newCheckOut);
-  if (hoursDiff >= 4 && formData.value.bookingType === BOOKING_TYPES.HOURLY) {
-    formData.value.bookingType = BOOKING_TYPES.DAILY;
-    if (selectedRoom.value) {
-      formData.value.pricePerUnit = selectedRoom.value.priceDaily;
-    }
-  }
-
-  console.log("Check-in or Check-out changed:", newCheckIn, newCheckOut);
-
-  console.log("Recalculating total price...", numberOfHours.value, numberOfNights.value, calculatedTotalPrice);
-});
-
-// Watch booking type change and update price accordingly
-watch(
-  () => formData.value.bookingType,
-  (newType) => {
-    if (selectedRoom.value) {
-      if (newType === BOOKING_TYPES.HOURLY) {
-        formData.value.pricePerUnit = selectedRoom.value.priceHourly;
-      } else {
-        formData.value.pricePerUnit = selectedRoom.value.priceDaily;
-      }
-    }
-    console.log("Booking type changed to:", newType, "Updated pricePerUnit to:", formData.value.pricePerUnit);
-  },
-);
-
-const roomPricePerNight = computed(() => {
-  const room = store.rooms.find((r) => r.number === formData.value.roomNumber);
-  return room?.price || 0;
-});
-
-// Watch guest search query and call searchGuests service
-watch(guestSearchQuery, async (newQuery) => {
-  if (!showGuestDropdown.value) return;
-
-  isSearching.value = true;
-  try {
-    const results = await searchGuests(newQuery);
-    filteredGuests.value = results;
-  } catch (error) {
-    console.error("Error searching guests:", error);
-    filteredGuests.value = [];
-  } finally {
-    isSearching.value = false;
-  }
-});
-
-// Load top 10 guests when dropdown opens
-watch(showGuestDropdown, async (isOpen) => {
-  if (isOpen && filteredGuests.value.length === 0 && !guestSearchQuery.value.trim()) {
-    isSearching.value = true;
-    try {
-      const results = await searchGuests("", 10);
-      filteredGuests.value = results;
-    } catch (error) {
-      console.error("Error loading guests:", error);
-      filteredGuests.value = [];
-    } finally {
-      isSearching.value = false;
-    }
-  }
+  totalHourDuration: 0,
+  totalDayDuration: 0,
 });
 
 const numberOfNights = computed(() => {
-  return calculateBookingDays(formData.value.checkIn, formData.value.checkOut);
+  return calculateBookingDays(booking.value.checkIn, booking.value.checkOut);
 });
 
 const numberOfHours = computed(() => {
-  return calculateBookingHours(formData.value.checkIn, formData.value.checkOut);
+  return calculateBookingHours(booking.value.checkIn, booking.value.checkOut);
 });
 
 const calculatedTotalPrice = computed(() => {
-  return formData.value.pricePerUnit * numberOfHours.value;
+  return booking.value.pricePerUnit * numberOfHours.value;
 });
 
-const guestAvatarUrl = computed(() => {
-  return selectedGuestAvatar.value || DEFAULT_AVATAR_SVG;
-});
+const handleGuestUpdate = (guestIds) => {
+  booking.value.guestIds = guestIds;
+};
 
-const openModal = (roomNumber) => {
-  const room = store.rooms.find((r) => r.number === roomNumber);
+const handleTimeUpdate = (timeData) => {
+  booking.value.checkIn = timeData.checkIn;
+  booking.value.checkOut = timeData.checkOut;
+  booking.value.bookingType = timeData.bookingType;
+  booking.value.totalHourDuration = timeData.totalHour;
+  booking.value.totalDayDuration = timeData.totalDay;
+};
+
+const handlePriceUpdate = (pricePerUnit) => {
+  booking.value.pricePerUnit = pricePerUnit;
+};
+
+const openModal = async (roomNumber) => {
+  isVisible.value = true;
+  isLoadingRoom.value = true;
+
+  const room = await getRoomByNumber(roomNumber);
+  selectedRoom.value = room;
+  isLoadingRoom.value = false;
 
   const checkInDate = new Date();
 
@@ -306,171 +120,129 @@ const openModal = (roomNumber) => {
   const checkOutDate = new Date();
   checkOutDate.setDate(checkInDate.getDate() + 1);
 
-  formData.value = {
+  booking.value = {
     roomNumber,
-    guestId: "",
+    guestIds: [],
     checkIn: checkInDate,
     checkOut: checkOutDate,
     pricePerUnit: room?.priceDaily || 0,
     totalPrice: 0,
     bookingType: BOOKING_TYPES.DAILY,
+    totalHourDuration: calculateBookingHours(checkInDate, checkOutDate),
+    totalDayDuration: calculateBookingDays(checkInDate, checkOutDate),
+    totalPrepaid: 0,
   };
-  guestSearchQuery.value = "";
-  showGuestDropdown.value = false;
-  filteredGuests.value = [];
-  selectedGuestName.value = "";
-  selectedGuestPhone.value = "";
-  selectedGuestCitizenId.value = "";
-  selectedGuestEmail.value = "";
-  selectedGuestNationality.value = "";
-  selectedGuestDateOfBirth.value = "";
-  selectedGuestLastRentalDate.value = "";
-  selectedGuestAvatar.value = "";
   isVisible.value = true;
-
-  // Load top 10 guests by default
-  loadDefaultGuests();
-};
-
-const loadDefaultGuests = async () => {
-  isSearching.value = true;
-  try {
-    const results = await getTopGuests();
-    filteredGuests.value = results;
-  } catch (error) {
-    console.error("Error loading default guests:", error);
-    filteredGuests.value = [];
-  } finally {
-    isSearching.value = false;
-  }
 };
 
 const closeModal = () => {
   isVisible.value = false;
-  formData.value = {
+  booking.value = {
     roomNumber: "",
-    guestId: "",
+    guestIds: [],
     checkIn: null,
     checkOut: null,
     pricePerUnit: 0,
     totalPrice: 0,
     bookingType: BOOKING_TYPES.DAILY,
+    totalHourDuration: 0,
+    totalDayDuration: 0,
+    totalPrepaid: 0,
   };
-  guestSearchQuery.value = "";
-  showGuestDropdown.value = false;
-  filteredGuests.value = [];
-  selectedGuestName.value = "";
-  selectedGuestPhone.value = "";
-  selectedGuestCitizenId.value = "";
-  selectedGuestEmail.value = "";
-  selectedGuestNationality.value = "";
-  selectedGuestDateOfBirth.value = "";
-  selectedGuestLastRentalDate.value = "";
-  selectedGuestAvatar.value = "";
 };
 
-const selectGuest = (guest) => {
-  formData.value.guestId = guest.id;
-  selectedGuestName.value = guest.name;
-  selectedGuestPhone.value = guest.phone || "";
-  selectedGuestCitizenId.value = guest.citizenId || "";
-  selectedGuestEmail.value = guest.email || "";
-  selectedGuestNationality.value = guest.nationality || "";
-  selectedGuestDateOfBirth.value = guest.dateOfBirth || "";
-  selectedGuestLastRentalDate.value = guest.lastRentalDate || "";
-  selectedGuestAvatar.value = guest.avatar || "";
-  guestSearchQuery.value = guest.name;
-  showGuestDropdown.value = false;
-};
+const submitBooking = async () => {
+  // Validate guest information
+  // if (!booking.value.guestIds || booking.value.guestIds.length === 0) {
+  //   messageModalRef.value.show({
+  //     title: lang.get("common.warning"),
+  //     message: lang.get("booking.selectGuest"),
+  //     buttonText: lang.get("common.ok"),
+  //   });
+  //   return;
+  // }
 
-const openCreateGuestModal = () => {
-  if (createGuestModalRef.value) {
-    createGuestModalRef.value.openModal(guestSearchQuery.value);
+  // Validate check-in date
+  if (!booking.value.checkIn) {
+    messageModalRef.value.show({
+      title: lang.get("common.warning"),
+      message: lang.get("booking.selectCheckIn"),
+      buttonText: lang.get("common.ok"),
+    });
+    return;
   }
-};
 
-const handleGuestSearchBlur = () => {
-  setTimeout(() => {
-    showGuestDropdown.value = false;
-  }, 200);
-};
+  // Validate check-out date
+  if (!booking.value.checkOut) {
+    messageModalRef.value.show({
+      title: lang.get("common.warning"),
+      message: lang.get("booking.selectCheckOut"),
+      buttonText: lang.get("common.ok"),
+    });
+    return;
+  }
 
-const submitBooking = () => {
-  const minimumDuration = formData.value.bookingType === BOOKING_TYPES.HOURLY ? numberOfHours.value : numberOfNights.value;
-  if (!formData.value.guestId || !formData.value.checkIn || !formData.value.checkOut || minimumDuration <= 0 || !formData.value.pricePerUnit) {
-    alert(lang.createBooking?.warning || "Vui lòng điền đầy đủ thông tin");
+  // Validate minimum duration
+  const minimumDuration = booking.value.bookingType === BOOKING_TYPES.HOURLY ? numberOfHours.value : numberOfNights.value;
+  if (minimumDuration <= 0) {
+    messageModalRef.value.show({
+      title: lang.get("common.warning"),
+      message: lang.get("booking.invalidDuration"),
+      buttonText: lang.get("common.ok"),
+    });
+    return;
+  }
+
+  // Validate price per unit
+  if (!booking.value.pricePerUnit || booking.value.pricePerUnit <= 0) {
+    messageModalRef.value.show({
+      title: lang.get("common.warning"),
+      message: lang.get("booking.selectPrice"),
+      buttonText: lang.get("common.ok"),
+    });
     return;
   }
 
   // Convert Date objects to ISO datetime strings
-  const checkInStr = formData.value.checkIn.toISOString();
-  const checkOutStr = formData.value.checkOut.toISOString();
+  const checkInStr = booking.value.checkIn.toISOString();
+  const checkOutStr = booking.value.checkOut.toISOString();
 
-  store.addBooking({
-    guestId: formData.value.guestId,
-    roomNumber: formData.value.roomNumber,
-    checkIn: checkInStr,
-    checkOut: checkOutStr,
-    bookingType: formData.value.bookingType,
-    pricePerUnit: formData.value.pricePerUnit,
-    totalPrice: calculatedTotalPrice.value,
-  });
+  isSubmitting.value = true;
+  try {
+    // Create booking via API
 
-  closeModal();
-};
+    console.log("Creating booking with data:", booking.value);
 
-/**
- * Format Date to datetime-local format (YYYY-MM-DDTHH:mm)
- * @param {Date} value - Value to format
- * @returns {string} Formatted datetime-local string
- */
-const formatDateTimeLocal = (value) => {
-  if (!value || !(value instanceof Date)) return "";
-  if (isNaN(value.getTime())) return "";
+    const newBooking = await createBooking(booking.value);
 
-  const year = value.getFullYear();
-  const month = String(value.getMonth() + 1).padStart(2, "0");
-  const day = String(value.getDate()).padStart(2, "0");
-  const hours = String(value.getHours()).padStart(2, "0");
-  const minutes = String(value.getMinutes()).padStart(2, "0");
+    // Create booking created event
+    await addBookingEvent(newBooking.id, {
+      type: BOOKING_EVENT_TYPES.BOOKING_CREATED,
+      title: lang.get("bookingEvents.bookingCreated"),
+      description: lang.get("bookingEvents.bookingCreatedDescription"),
+      date: new Date(),
+    });
 
-  return `${year}-${month}-${day}T${hours}:${minutes}`;
-};
+    // Update room status to occupied via API
+    if (selectedRoom.value?.id) {
+      await updateBookingRoom(selectedRoom.value.id, newBooking.id);
+    }
 
-/**
- * Parse datetime-local string to Date object
- * @param {string} value - datetime-local string (YYYY-MM-DDTHH:mm)
- * @returns {Date} Parsed Date object
- */
-const parseDateTime = (value) => {
-  if (!value) return null;
-  const [date, time] = value.split("T");
-  const [year, month, day] = date.split("-");
-  const [hours, minutes] = time.split(":");
+    // Close modal after successful creation
+    closeModal();
 
-  const dateObj = new Date(year, month - 1, day, hours, minutes, 0);
-  return dateObj;
-};
-
-/**
- * Set quick duration for checkout
- * @param {number} value - Duration value
- * @param {string} unit - Duration unit ('hour' or 'day')
- */
-const setQuickDuration = (value, unit) => {
-  // checkIn is already a Date object
-  const checkOutDate = new Date(formData.value.checkIn);
-
-  if (unit === "hour") {
-    checkOutDate.setHours(checkOutDate.getHours() + value);
-    formData.value.bookingType = BOOKING_TYPES.HOURLY;
-  } else if (unit === "day") {
-    checkOutDate.setDate(checkOutDate.getDate() + value);
-    formData.value.bookingType = BOOKING_TYPES.DAILY;
+    // Open booking details modal
+    bookingDetailsModalRef.value.openModal(newBooking.id);
+  } catch (error) {
+    console.error("Error creating booking:", error);
+    messageModalRef.value.show({
+      title: lang.get("common.error"),
+      message: lang.get("booking.createError"),
+      buttonText: lang.get("common.ok"),
+    });
+  } finally {
+    isSubmitting.value = false;
   }
-
-  // Store as Date object
-  formData.value.checkOut = checkOutDate;
 };
 
 defineExpose({
@@ -479,10 +251,6 @@ defineExpose({
 </script>
 
 <style scoped>
-.modal-body {
-  padding: 20px;
-}
-
 .form-group {
   margin-bottom: 18px;
 }
@@ -504,16 +272,6 @@ defineExpose({
   font-weight: 600;
   color: #333;
   font-size: 14px;
-}
-
-.room-display label {
-  margin-bottom: 0;
-  font-size: 16px;
-}
-
-.room-display strong {
-  color: #667eea;
-  font-size: 18px;
 }
 
 .required {
@@ -563,61 +321,15 @@ select.input-field {
   font-weight: 500;
 }
 
-.room-info-box {
-  background: #ffffff;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  padding: 16px;
+.details-section {
   margin-bottom: 18px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
-.room-info-box h4 {
-  margin: 0 0 14px 0;
-  font-size: 13px;
-  font-weight: 700;
-  color: #667eea;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.room-info-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 12px;
-}
-
-.room-info-item {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  padding: 8px;
-  font-size: 13px;
-  border-radius: 4px;
-  background: #f9fafb;
-}
-
-.room-info-item .label {
-  color: #6b7280;
+.section-title {
+  margin: 0 0 12px 0;
+  font-size: 14px;
   font-weight: 600;
-  font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.room-info-item .value {
-  color: #667eea;
-  font-weight: 600;
-  font-size: 12px;
-}
-
-.modal-footer {
-  padding: 16px 20px;
-  border-top: 1px solid #e5e7eb;
-  display: flex;
-  gap: 12px;
-  justify-content: flex-end;
-  background: white;
+  color: #333;
 }
 
 .btn {
@@ -650,282 +362,57 @@ select.input-field {
   background: #d1d5db;
 }
 
-.quick-duration-buttons {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-bottom: 10px;
-}
-
-.quick-btn {
-  padding: 6px 12px;
-  border: 1px solid #667eea;
-  background: #667eea;
-  color: white;
-  border-radius: 6px;
-  font-size: 12px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
-  flex: 1;
-  min-width: 70px;
-}
-
-.quick-btn:hover {
-  background: #667eea;
-  color: white;
-  transform: translateY(-1px);
-  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
-}
-
-.quick-btn-hour {
-  border-color: #667eea;
-  background: #667eea;
-  color: white;
-}
-
-.quick-btn-hour:hover {
-  background: #667eea;
-  color: white;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(139, 160, 255, 0.3);
-}
-
-.quick-btn-day {
-  border-color: #10b981;
-  background: #10b981;
-  color: white;
-}
-
-.quick-btn-day:hover {
-  background: #10b981;
-  color: white;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
-}
-
-.guest-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 8px;
-}
-
-.guest-header label {
-  margin: 0;
-}
-
-.btn-new-guest {
-  padding: 4px 12px;
-  background: #10b981;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  font-size: 12px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.btn-new-guest:hover {
-  background: #059669;
-  transform: translateY(-1px);
-}
-
-.guest-search-box {
-  position: relative;
-}
-
-.guest-dropdown {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  right: 0;
-  background: white;
-  border: 1px solid #1988ff;
-  border-top: none;
-  border-radius: 0 0 6px 6px;
-  max-height: 200px;
-  overflow-y: auto;
-  z-index: 1000;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  margin-top: -1px;
-}
-
-.dropdown-empty {
-  padding: 12px;
-  text-align: center;
-  color: #9ca3af;
-  font-size: 13px;
-}
-
-.dropdown-item {
-  padding: 10px 12px;
-  cursor: pointer;
-  border-bottom: 1px solid #e5e7eb;
-  transition: all 0.15s;
-  font-size: 13px;
-  color: #374151;
-  background: white;
-}
-
-.dropdown-item:last-child {
-  border-bottom: none;
-}
-
-.dropdown-item:hover {
-  background: #667eea;
-  color: white;
-  font-weight: 500;
-}
-
-.guest-selected {
-  position: absolute;
-  right: 12px;
-  top: 50%;
-  transform: translateY(-50%);
-  color: #10b981;
-  font-size: 12px;
-  font-weight: 600;
-  pointer-events: none;
-}
-
-.guest-info-details {
-  margin-top: 8px;
-  padding: 15px;
-  background: #f9fafb;
-  border-radius: 4px;
-  border: 1px solid #e5e7eb;
-  display: grid;
-  grid-template-columns: auto 1fr;
-  gap: 15px;
-  align-items: start;
-}
-
-.guest-info-section {
+.loading-container {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-}
-
-.guest-avatar-display {
-  display: flex;
-  justify-content: center;
-  margin-bottom: 8px;
-}
-
-.guest-avatar-img {
-  width: 100px;
-  height: 100px;
-  object-fit: cover;
-  border-radius: 8px;
-  border: 2px solid #e5e7eb;
-}
-
-.info-row {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: 12px;
-}
-
-.info-col {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.guest-info-details .label {
-  font-size: 11px;
-  color: #6b7280;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.guest-info-details .value {
-  font-size: 12px;
-  color: #374151;
-  font-weight: 500;
-}
-
-.guest-avatar-display {
-  display: flex;
-  justify-content: center;
-  margin-bottom: 12px;
-}
-
-.guest-avatar-img {
-  width: 100px;
-  height: 100px;
-  object-fit: cover;
-  border-radius: 8px;
-  border: 2px solid #e5e7eb;
-}
-
-.dropdown-guest-info {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.dropdown-guest-info .guest-name {
-  font-size: 13px;
-  color: #374151;
-  font-weight: 500;
-}
-
-.dropdown-guest-info .guest-citizen-id {
-  font-size: 11px;
-  color: #9ca3af;
-  font-weight: 400;
-}
-
-.accompanied-guests-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 10px;
-  padding: 10px;
-  background: #f3f4f6;
-  border-radius: 4px;
-  min-height: 32px;
-}
-
-.accompanied-guest-tag {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 12px;
-  background: #667eea;
-  color: white;
-  border-radius: 20px;
-  font-size: 13px;
-  font-weight: 500;
-}
-
-.remove-guest-btn {
-  background: none;
-  border: none;
-  color: white;
-  cursor: pointer;
-  font-size: 18px;
-  padding: 0;
-  width: 20px;
-  height: 20px;
-  display: flex;
   align-items: center;
   justify-content: center;
+  padding: 40px 20px;
+  gap: 16px;
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid #e5e7eb;
+  border-top-color: #667eea;
   border-radius: 50%;
-  transition: all 0.2s;
-  line-height: 1;
+  animation: spin 1s linear infinite;
 }
 
-.remove-guest-btn:hover {
-  background: rgba(255, 255, 255, 0.3);
-  transform: scale(1.1);
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
-.accompanied-guest-input {
-  margin-bottom: 8px;
+.loading-container p {
+  color: #6b7280;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn:disabled:hover {
+  transform: none;
+}
+
+.btn-loading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.spinner-small {
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
 }
 </style>

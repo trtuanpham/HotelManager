@@ -32,8 +32,7 @@
         </tr>
         <tr v-for="guest in guests" v-else :key="guest.id" class="guest-row" @click="editGuest(guest)">
           <td class="avatar-cell">
-            <img v-if="guest.avatar" :src="guest.avatar" :alt="guest.name" class="avatar-img" />
-            <div v-else class="avatar-placeholder">{{ getInitials(guest.name) }}</div>
+            <AvatarSection :guest-data="{ imageUrl: guest.avatar, name: guest.name }" />
           </td>
           <td>{{ guest.name }}</td>
           <td>{{ guest.citizenId }}</td>
@@ -63,6 +62,7 @@ import { languageController as lang } from "../controller/languageController";
 import { getGuestsPaginated } from "../services/guestService";
 import GuestDetailsModal from "../components/modals/GuestDetailsModal.vue";
 import ConfirmDialog from "../components/modals/ConfirmDialog.vue";
+import AvatarSection from "../components/modals/AvatarSection.vue";
 import "@material-design-icons/font";
 
 const guestDetailsModalRef = ref(null);
@@ -142,15 +142,6 @@ const createGuest = () => {
 
 const formatDate = (date) => {
   return new Date(date).toLocaleDateString("vi-VN");
-};
-
-const getInitials = (name) => {
-  return name
-    .split(" ")
-    .map((word) => word.charAt(0))
-    .join("")
-    .toUpperCase()
-    .slice(0, 2);
 };
 
 const paginationText = computed(() => {
@@ -296,27 +287,13 @@ const paginationText = computed(() => {
 .avatar-cell {
   text-align: center;
   padding: 8px 15px;
+  width: 80px;
 }
 
-.avatar-img {
+.avatar-cell :deep(.avatar-view) {
   width: 50px;
   height: 50px;
   border-radius: 4px;
-  object-fit: cover;
-  border: 2px solid #e0e0e0;
-}
-
-.avatar-placeholder {
-  width: 50px;
-  height: 50px;
-  border-radius: 4px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 600;
-  font-size: 14px;
   margin: 0 auto;
 }
 

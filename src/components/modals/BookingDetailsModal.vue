@@ -20,10 +20,10 @@
       <template v-else-if="booking">
         <div class="booking-details">
           <!-- Room Info Section -->
-          <RoomInfoSection :booking-id="booking.id" />
+          <RoomInfoSection :room-number="booking.roomNumber" />
 
           <!-- Guest Info Section -->
-          <GuestInfoSection :booking="booking" />
+          <GuestInfoSection :guest-ids="booking.guestIds" @update-guests="handleGuestUpdate" />
 
           <!-- Check-in/Check-out Section -->
           <div class="details-section">
@@ -175,6 +175,10 @@ const handleTimeUpdate = (timeData) => {
 const handlePriceUpdate = (pricePerUnit) => {
   booking.value.pricePerUnit = pricePerUnit;
   changedData.value.pricePerUnit = true;
+};
+
+const handleGuestUpdate = (guestIds) => {
+  booking.value.guestIds = guestIds;
 };
 
 const submitPrepayment = () => {

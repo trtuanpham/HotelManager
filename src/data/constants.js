@@ -1,6 +1,6 @@
 export const ROOM_STATUS = {
   AVAILABLE: "Available",
-  OCCUPIED: "Occupied",
+  BOOKING: "Booking",
   MAINTENANCE: "Maintenance",
   CLEANING: "Cleaning",
 };
@@ -72,6 +72,13 @@ export const BOOKING_EVENT_COLORS = {
   checkout: "#ef4444",
   payment: "#22c55e",
   service_used: "#a855f7",
+};
+
+export const ROOMS_STATUS_COLORS = {
+  Available: "#667eea",
+  Booking: "#10b981",
+  Maintenance: "#ef4444",
+  Cleaning: "#f59e0b",
 };
 
 // Payment Methods

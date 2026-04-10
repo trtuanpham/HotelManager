@@ -3,7 +3,7 @@
     <div class="accompanied-header">
       <h4 class="section-title">{{ lang.get("booking.guestTitleInfo") }}</h4>
       <div class="header-actions">
-        <button v-if="!isEditMode" class="edit-btn" @click="isEditMode = true">
+        <button v-if="!isEditMode && accompaniedGuestIds.length > 0" class="edit-btn" @click="isEditMode = true">
           {{ lang.get("common.edit") }}
         </button>
         <button v-if="isEditMode" class="close-btn" @click="isEditMode = false">
@@ -24,7 +24,7 @@
         <!-- Loaded Guest Card -->
         <div v-else class="guest-card">
           <div class="guest-card-avatar">
-            <img :src="getGuestData(guestId)?.imageUrl || DEFAULT_AVATAR_SVG" alt="Guest" class="guest-card-img" />
+            <AvatarSection :guest-data="getGuestData(guestId)" />
           </div>
           <div class="guest-card-info">
             <div class="guest-card-name">{{ getGuestData(guestId)?.name || "---" }}</div>
@@ -40,18 +40,10 @@
         <div class="add-text">{{ lang.get("common.add") }}</div>
       </button>
     </div>
-
-    <div v-if="accompaniedGuestIds.length === 0" class="empty-message">{{ lang.get("booking.noGuests") }}</div>
   </div>
 
   <!-- Guest Search Modal -->
-  <GuestSearchModal
-    :is-open="showGuestSearchModal"
-    :selected-guest-ids="props.booking?.guestIds || []"
-    @close="showGuestSearchModal = false"
-    @select-guest="addGuest"
-    @guest-created="onGuestCreated"
-  />
+  <GuestSearchModal :is-open="showGuestSearchModal" :selected-guest-ids="props.guestIds || []" @close="showGuestSearchModal = false" @select-guest="addGuest" @guest-created="onGuestCreated" />
 
   <!-- Confirm Dialog -->
   <ConfirmDialog ref="confirmDialogRef" />
@@ -60,19 +52,19 @@
 <script setup>
 import { ref, watch, computed } from "vue";
 import { languageController as lang } from "../../../controller/languageController";
-import { DEFAULT_AVATAR_SVG } from "../../../data/constants";
 import { getGuestById, getAllGuests } from "../../../services/guestService";
+import AvatarSection from "../AvatarSection.vue";
 import GuestSearchModal from "../GuestSearchModal.vue";
 import ConfirmDialog from "../ConfirmDialog.vue";
 
 const props = defineProps({
-  booking: {
-    type: Object,
-    required: true,
+  guestIds: {
+    type: Array,
+    default: () => [],
   },
 });
 
-const emit = defineEmits(["remove-guest"]);
+const emit = defineEmits(["remove-guest", "update-guests"]);
 
 const isEditMode = ref(false);
 const loadingGuestIds = ref(new Set());
@@ -82,10 +74,10 @@ const allGuests = ref([]);
 const confirmDialogRef = ref(null);
 const guestToRemove = ref(null);
 
-// Computed property to get accompanied guest IDs (all guests)
+// Computed property to get accompanied guest IDs
 const accompaniedGuestIds = computed(() => {
-  if (!props.booking?.guestIds || props.booking.guestIds.length === 0) return [];
-  return props.booking.guestIds;
+  if (!props.guestIds || props.guestIds.length === 0) return [];
+  return props.guestIds;
 });
 
 // Load detailed guest data for each accompanied guest
@@ -131,33 +123,32 @@ const removeGuest = (guestId) => {
 };
 
 const confirmRemoveGuest = async () => {
-  if (!guestToRemove.value || !props.booking) return;
+  if (!guestToRemove.value) return;
 
   try {
     // Remove from local guestIds array
-    const index = props.booking.guestIds.indexOf(guestToRemove.value);
+    const index = props.guestIds.indexOf(guestToRemove.value);
     if (index > -1) {
-      props.booking.guestIds.splice(index, 1);
+      props.guestIds.splice(index, 1);
     }
 
     // Remove from loaded data cache
     delete loadedGuestData.value[guestToRemove.value];
 
-    // remove api
-
     // Emit event for parent to handle
     emit("remove-guest", guestToRemove.value);
+    emit("update-guests", props.guestIds);
   } catch (error) {
     console.error("Failed to remove guest:", error);
   }
 };
 
 const addGuest = (guestId) => {
-  if (!props.booking) return;
-  if (!props.booking.guestIds.includes(guestId)) {
-    props.booking.guestIds.push(guestId);
+  if (!props.guestIds.includes(guestId)) {
+    props.guestIds.push(guestId);
     loadGuestDetails(guestId);
     showGuestSearchModal.value = false;
+    emit("update-guests", props.guestIds);
   }
 };
 
@@ -178,9 +169,9 @@ watch(showGuestSearchModal, async (isOpen) => {
   }
 });
 
-// Load guest details when booking data is received
+// Load guest details when guestIds prop changes
 watch(
-  () => props.booking?.guestIds,
+  () => props.guestIds,
   async (guestIds) => {
     if (!guestIds || guestIds.length === 0) return;
 
@@ -238,8 +229,15 @@ watch(
   color: white;
 }
 
-.edit-btn:hover {
+.edit-btn:hover:not(:disabled) {
   background: #5568d3;
+}
+
+.edit-btn:disabled {
+  background: #d1d5db;
+  color: #9ca3af;
+  cursor: not-allowed;
+  opacity: 0.6;
 }
 
 .close-btn {
@@ -276,14 +274,14 @@ watch(
 .guest-card-avatar {
   display: flex;
   justify-content: center;
-}
-
-.guest-card-img {
   width: 80px;
   height: 80px;
-  object-fit: cover;
+}
+
+.guest-card-avatar :deep(.avatar-view) {
+  width: 100%;
+  height: 100%;
   border-radius: 4px;
-  border: 2px solid #e5e7eb;
 }
 
 .guest-card-name {

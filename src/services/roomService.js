@@ -11,7 +11,7 @@ export const getRoomByNumber = async (roomNumber) => {
     setTimeout(() => {
       const room = store.rooms.find((r) => r.number === roomNumber);
       resolve(room || null);
-    }, 3000); // Simulate 1-2 second network delay
+    }, 1000); // Simulate 1-2 second network delay
   });
 };
 
@@ -30,15 +30,48 @@ export const getRoomById = async (id) => {
   });
 };
 
+export const updateBookingRoom = async (roomId, bookingId) => {
+  // Dummy API call - replace with real API later
+  return new Promise((resolve, reject) => {
+    setTimeout(() => {
+      // Implement update logic here
+      const room = store.rooms.find((r) => r.id === roomId);
+      if (!room) {
+        reject(new Error("Room not found"));
+        return;
+      }
+
+      room.bookingId = bookingId;
+      room.status = "Booking";
+
+      resolve();
+    }, 2000); // Simulate 1-2 second network delay
+  });
+};
+
 /**
- * Get all rooms
- * @returns {Promise<Array>} Array of all rooms
+ * Get all rooms with optional filters
+ * @param {string} status - Filter by status (optional)
+ * @param {string} group - Filter by group (optional)
+ * @returns {Promise<Array>} Array of filtered rooms
  */
-export const getAllRooms = async () => {
+export const getAllRooms = async (status = "", group = "") => {
   // Dummy API call - replace with real API later
   return new Promise((resolve) => {
     setTimeout(() => {
-      resolve(store.rooms);
+      let result = store.rooms;
+
+      // Filter by status if provided
+      if (status) {
+        result = result.filter((r) => r.status === status);
+      }
+
+      // Filter by group if provided
+      if (group) {
+        result = result.filter((r) => r.group === group);
+      }
+
+      resolve(result);
     }, 3000); // Simulate 1-2 second network delay
   });
 };
@@ -100,7 +133,7 @@ export const getRoomPrice = async (roomNumber, bookingType) => {
 
 /**
  * Update room status
- * @param {number} roomId - Room ID
+ * @param {string} roomId - Room ID
  * @param {string} status - New status
  * @returns {Promise<Object>} Updated room object
  */
@@ -110,6 +143,60 @@ export const updateRoomStatus = async (roomId, status) => {
     setTimeout(() => {
       store.updateRoom(roomId, { status });
       resolve();
+    }, 2000); // Simulate 1-2 second network delay
+  });
+};
+
+/**
+ * Create a new room
+ * @param {Object} roomData - Room data object
+ * @returns {Promise<Object>} Created room object
+ */
+export const createRoom = async (roomData) => {
+  // Dummy API call - replace with real API later
+  return new Promise((resolve, reject) => {
+    // check for duplicate room number
+    const existingRoom = store.rooms.find((r) => r.number === roomData.number);
+    if (existingRoom) {
+      reject(new Error("room_number_exists"));
+      return;
+    }
+
+    setTimeout(() => {
+      // Generate new ID (in real API, server would do this)
+      const newId = "room_" + new Date().getTime();
+      const newRoom = {
+        id: newId,
+        ...roomData,
+      };
+      store.rooms.push(newRoom);
+      resolve(newRoom);
+    }, 2000); // Simulate 1-2 second network delay
+  });
+};
+
+/**
+ * Update an existing room
+ * @param {string} roomId - Room ID
+ * @param {Object} roomData - Room data object with fields to update
+ * @returns {Promise<Object>} Updated room object
+ */
+export const updateRoom = async (roomId, roomData) => {
+  // Dummy API call - replace with real API later
+  return new Promise((resolve, reject) => {
+    setTimeout(() => {
+      const roomIndex = store.rooms.findIndex((r) => r.id === roomId);
+      if (roomIndex === -1) {
+        reject(new Error("Room not found"));
+        return;
+      }
+
+      const updatedRoom = {
+        ...store.rooms[roomIndex],
+        ...roomData,
+      };
+      store.rooms[roomIndex] = updatedRoom;
+      resolve(updatedRoom);
     }, 2000); // Simulate 1-2 second network delay
   });
 };

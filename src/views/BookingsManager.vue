@@ -1,159 +1,97 @@
 <template>
   <div class="bookings-manager">
     <div class="header">
-      <h1>📋 Quản lý đặt phòng</h1>
-      <button class="btn-primary" @click="showAddForm = true">+ Thêm đặt phòng</button>
-    </div>
-
-    <div v-if="showAddForm" class="modal-overlay">
-      <div class="modal">
-        <h2>Thêm đặt phòng mới</h2>
-        <form @submit.prevent="addBooking">
-          <input v-model="newBooking.guestName" placeholder="Tên khách hàng" required />
-          <input v-model="newBooking.roomNumber" placeholder="Số phòng" required />
-          <input v-model="newBooking.checkIn" type="date" required />
-          <input v-model="newBooking.checkOut" type="date" required />
-          <input v-model.number="newBooking.totalPrice" type="number" placeholder="Tổng giá" required />
-          <div class="modal-buttons">
-            <button type="submit" class="btn-primary">Thêm</button>
-            <button type="button" class="btn-secondary" @click="showAddForm = false">Hủy</button>
-          </div>
-        </form>
-      </div>
+      <h1>{{ lang.get("bookings.title") }}</h1>
     </div>
 
     <div class="filters">
-      <input 
-        v-model="searchTerm" 
-        type="text" 
-        placeholder="Tìm kiếm đặt phòng..."
-        class="search-input"
-      />
+      <input v-model="searchTerm" type="text" :placeholder="lang.get('bookings.search')" class="search-input" />
       <select v-model="filterStatus" class="filter-select">
-        <option value="">Tất cả trạng thái</option>
-        <option value="Pending">Chưa xác nhận</option>
-        <option value="Checked In">Đã nhận phòng</option>
-        <option value="Checked Out">Đã trả phòng</option>
+        <option value="">{{ lang.get("bookings.allStatus") }}</option>
+        <option value="Pending">{{ lang.get("bookings.pending") }}</option>
+        <option value="Checked In">{{ lang.get("bookings.checkedIn") }}</option>
+        <option value="Checked Out">{{ lang.get("bookings.checkedOut") }}</option>
       </select>
     </div>
 
     <table class="data-table">
       <thead>
         <tr>
-          <th>Khách hàng</th>
-          <th>Phòng</th>
-          <th>Ngày nhận</th>
-          <th>Ngày trả</th>
-          <th>Tổng giá</th>
-          <th>Trạng thái</th>
-          <th>Thao tác</th>
+          <th>{{ lang.get("bookings.roomNumber") }}</th>
+          <th>{{ lang.get("bookings.checkIn") }}</th>
+          <th>{{ lang.get("bookings.checkOut") }}</th>
+          <th>{{ lang.get("bookings.totalGuests") }}</th>
+          <th>{{ lang.get("bookings.totalPrice") }}</th>
+          <th>{{ lang.get("bookings.paidAmount") }}</th>
+          <th>{{ lang.get("bookings.status") }}</th>
         </tr>
       </thead>
       <tbody>
         <tr v-for="booking in filteredBookings" :key="booking.id">
-          <td>{{ booking.guestName }}</td>
           <td>{{ booking.roomNumber }}</td>
-          <td>{{ formatDate(booking.checkIn) }}</td>
-          <td>{{ formatDate(booking.checkOut) }}</td>
-          <td class="price">{{ formatPrice(booking.totalPrice) }}</td>
-          <td><span :class="`status-badge ${booking.status.toLowerCase().replace(' ', '')}`">{{ booking.status }}</span></td>
-          <td class="actions">
-            <button class="btn-small" @click="editBooking(booking)">✏️ Sửa</button>
-            <button class="btn-small btn-danger" @click="deleteBooking(booking.id)">🗑️ Xóa</button>
+          <td>{{ formatDateTimeLocal(new Date(booking.checkIn)) }}</td>
+          <td>{{ formatDateTimeLocal(new Date(booking.checkOut)) }}</td>
+          <td>{{ booking.guestIds.length }}</td>
+          <td class="price">{{ formatCurrency(booking.totalPrice) }}</td>
+          <td :class="['price', isPaidComplete(booking) ? 'paid-complete' : 'paid-incomplete']">{{ formatCurrency(booking.totalPrepaid) }}</td>
+          <td>
+            <span :class="`status-badge ${booking.status.toLowerCase().replace(' ', '')}`">{{ booking.status }}</span>
           </td>
         </tr>
       </tbody>
     </table>
-
-    <div v-if="editingBooking" class="modal-overlay">
-      <div class="modal">
-        <h2>Chỉnh sửa đặt phòng</h2>
-        <form @submit.prevent="updateBooking">
-          <input v-model="editingBooking.guestName" placeholder="Tên khách hàng" required />
-          <input v-model="editingBooking.roomNumber" placeholder="Số phòng" required />
-          <input v-model="editingBooking.checkIn" type="date" required />
-          <input v-model="editingBooking.checkOut" type="date" required />
-          <input v-model.number="editingBooking.totalPrice" type="number" placeholder="Tổng giá" required />
-          <select v-model="editingBooking.status" required>
-            <option value="Pending">Chưa xác nhận</option>
-            <option value="Checked In">Đã nhận phòng</option>
-            <option value="Checked Out">Đã trả phòng</option>
-          </select>
-          <div class="modal-buttons">
-            <button type="submit" class="btn-primary">Cập nhật</button>
-            <button type="button" class="btn-secondary" @click="editingBooking = null">Hủy</button>
-          </div>
-        </form>
-      </div>
-    </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
-import { hotelStore as store } from '../stores/hotelStore'
-import { langVN as lang } from '../locales/vi'
+import { ref, computed, onMounted } from "vue";
+import { languageController as lang } from "../controller/languageController";
+import { getAllBookings } from "../services/bookingService";
+import { useCurrency } from "../composables/useCurrency";
+import { useDateTime } from "../composables/useDateTime";
 
-const showAddForm = ref(false)
-const editingBooking = ref(null)
-const searchTerm = ref('')
-const filterStatus = ref('')
-const newBooking = ref({
-  guestName: '',
-  roomNumber: '',
-  checkIn: '',
-  checkOut: '',
-  totalPrice: 0
-})
+const { formatCurrency } = useCurrency();
+const { formatDateTimeLocal } = useDateTime();
+
+const searchTerm = ref("");
+const filterStatus = ref("");
+const bookings = ref([]);
+const isLoading = ref(false);
+
+// Load bookings on component mount
+onMounted(async () => {
+  isLoading.value = true;
+  try {
+    bookings.value = await getAllBookings();
+  } catch (error) {
+    console.error("Error loading bookings:", error);
+  } finally {
+    isLoading.value = false;
+  }
+});
 
 const filteredBookings = computed(() => {
-  return store.bookings.filter(booking => {
-    const matchesSearch = booking.guestName.toLowerCase().includes(searchTerm.value.toLowerCase()) ||
-                         booking.roomNumber.includes(searchTerm.value)
-    const matchesStatus = !filterStatus.value || booking.status === filterStatus.value
-    return matchesSearch && matchesStatus
-  })
-})
+  return bookings.value.filter((booking) => {
+    const matchesSearch = booking.roomNumber.includes(searchTerm.value);
+    const matchesStatus = !filterStatus.value || booking.status === filterStatus.value;
+    return matchesSearch && matchesStatus;
+  });
+});
 
-const addBooking = () => {
-  store.addBooking(newBooking.value)
-  newBooking.value = {
-    guestName: '',
-    roomNumber: '',
-    checkIn: '',
-    checkOut: '',
-    totalPrice: 0
+const loadBookings = async () => {
+  isLoading.value = true;
+  try {
+    bookings.value = await getAllBookings();
+  } catch (error) {
+    console.error("Error loading bookings:", error);
+  } finally {
+    isLoading.value = false;
   }
-  showAddForm.value = false
-}
+};
 
-const deleteBooking = (id) => {
-  if (confirm(lang.bookings.deleteConfirm)) {
-    store.deleteBooking(id)
-  }
-}
-
-const editBooking = (booking) => {
-  editingBooking.value = { ...booking }
-}
-
-const updateBooking = () => {
-  store.updateBooking(editingBooking.value.id, editingBooking.value)
-  editingBooking.value = null
-}
-
-const formatDate = (date) => {
-  return new Date(date).toLocaleDateString('vi-VN')
-}
-
-const formatPrice = (price) => {
-  return new Intl.NumberFormat('vi-VN', {
-    style: 'currency',
-    currency: 'VND',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0
-  }).format(price)
-}
+const isPaidComplete = (booking) => {
+  return booking.totalPrice === (booking.totalPrepaid || 0);
+};
 </script>
 
 <style scoped>
@@ -229,6 +167,14 @@ const formatPrice = (price) => {
 .price {
   color: #667eea;
   font-weight: 600;
+}
+
+.paid-complete {
+  color: #16a34a !important;
+}
+
+.paid-incomplete {
+  color: #ff6b6b !important;
 }
 
 .actions {

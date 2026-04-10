@@ -24,7 +24,9 @@
           <button v-if="localSearchInput" class="btn btn-link" @click="openCreateGuestModal">+ {{ lang.get("common.newGuest") }}</button>
         </div>
         <div v-for="guest in localFilteredGuests" :key="guest.id" class="guest-result-item" @click="selectGuest(guest.id)">
-          <img :src="guest.imageUrl || DEFAULT_AVATAR_SVG" :alt="guest.name" class="result-avatar" />
+          <div class="avatar-wrapper">
+            <AvatarSection :guest-data="guest" />
+          </div>
           <div class="result-info">
             <div class="result-name">{{ guest.name }}</div>
             <small class="result-detail">{{ guest.citizenId }}</small>
@@ -48,10 +50,10 @@
 <script setup>
 import { ref, watch } from "vue";
 import { languageController as lang } from "../../controller/languageController";
-import { DEFAULT_AVATAR_SVG } from "../../data/constants";
 import { searchGuests, getTopGuests } from "../../services/guestService";
 import ModalBase from "./ModalBase.vue";
 import CreateGuestModal from "./CreateGuestModal.vue";
+import AvatarSection from "./AvatarSection.vue";
 import "@material-design-icons/font";
 
 const props = defineProps({
@@ -291,12 +293,19 @@ const loadDefaultGuests = async () => {
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
-.result-avatar {
+.avatar-wrapper {
+  flex-shrink: 0;
   width: 40px;
   height: 40px;
   border-radius: 4px;
-  object-fit: cover;
+  overflow: hidden;
   border: 1px solid #e5e7eb;
+}
+
+.avatar-wrapper :deep(.avatar-view) {
+  width: 100%;
+  height: 100%;
+  border-radius: 4px;
 }
 
 .result-info {

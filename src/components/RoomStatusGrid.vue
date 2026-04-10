@@ -4,7 +4,7 @@
     <!-- Loading State -->
     <template v-if="isLoading">
       <div class="room-group">
-        <h3 class="group-title">{{ lang.get("dashboard.group") || "Group" }} 1</h3>
+        <div class="skeleton-title"></div>
         <div class="rooms-grid">
           <div v-for="i in 8" :key="`skeleton-${i}`" class="room-card skeleton-item">
             <div class="skeleton-content">
@@ -19,7 +19,7 @@
     <!-- Content State -->
     <template v-else v-for="(rooms, group) in roomsByGroup" :key="group">
       <div class="room-group">
-        <h3 class="group-title">{{ lang.get("dashboard.group") || "Group" }} {{ group }}</h3>
+        <h3 class="group-title">{{ group }}</h3>
         <div class="rooms-grid">
           <div v-for="room in rooms" :key="room.id" :class="['room-card', room.status.toLowerCase()]" @click="processingRoomId !== room.id && handleRoomCardClick(room)">
             <div v-if="processingRoomId === room.id" class="loading-overlay">
@@ -64,10 +64,10 @@ const props = defineProps({
 });
 
 const MAP_STATUS_LABEL = {
-  Available: lang.get("dashboard.statusAvailable"),
-  Occupied: lang.get("dashboard.statusOccupied"),
-  Maintenance: lang.get("dashboard.statusMaintenance"),
-  Cleaning: lang.get("dashboard.statusCleaning"),
+  [ROOM_STATUS.AVAILABLE]: lang.get("dashboard.statusAvailable"),
+  [ROOM_STATUS.BOOKING]: lang.get("dashboard.statusBooking"),
+  [ROOM_STATUS.MAINTENANCE]: lang.get("dashboard.statusMaintenance"),
+  [ROOM_STATUS.CLEANING]: lang.get("dashboard.statusCleaning"),
 };
 
 const confirmDialog = ref(null);
@@ -109,8 +109,9 @@ const handleRoomCardClick = async (room) => {
     }
   } else if (room.status === ROOM_STATUS.AVAILABLE) {
     createBookingModal.value.openModal(room.number);
-  } else if (room.status === ROOM_STATUS.OCCUPIED) {
+  } else if (room.status === ROOM_STATUS.BOOKING) {
     //
+    console.log("Open booking details for room:", room.bookingId);
     bookingDetailsModal.value.openModal(room.bookingId);
   }
 };
@@ -145,7 +146,6 @@ const handleRoomCardClick = async (room) => {
   color: #333;
   margin: 0 0 15px 0;
   padding-bottom: 10px;
-  border-bottom: 2px solid #667eea;
 }
 
 .rooms-grid {
@@ -187,13 +187,13 @@ const handleRoomCardClick = async (room) => {
   border-color: #9ca3af;
 }
 
-.room-card.occupied {
+.room-card.booking {
   background: #dcfce7;
   border: 2px solid #86efac;
   color: #15803d;
 }
 
-.room-card.occupied:hover {
+.room-card.booking:hover {
   background: #bbf7d0;
   border-color: #4ade80;
 }
@@ -244,16 +244,6 @@ const handleRoomCardClick = async (room) => {
   opacity: 0.7;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-}
-
-.room-guest {
-  font-size: 11px;
-  opacity: 0.75;
-  font-style: italic;
-  margin-top: 4px;
-  border-top: 1px solid currentColor;
-  padding-top: 4px;
-  opacity: 0.8;
 }
 
 .room-booking {
@@ -312,6 +302,16 @@ const handleRoomCardClick = async (room) => {
 .skeleton-item:hover {
   transform: none;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.skeleton-title {
+  width: 150px;
+  height: 20px;
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 1000px 100%;
+  animation: shimmer 2s infinite;
+  border-radius: 6px;
+  margin-bottom: 15px;
 }
 
 .skeleton-content {

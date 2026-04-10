@@ -1,65 +1,81 @@
 <template>
   <div class="details-section">
-    <h4 class="section-title">Thông tin phòng</h4>
+    <h4 class="section-title">{{ lang.get("booking.roomInfo") }}</h4>
     <div v-if="isLoading" class="loading-placeholder">
       <div class="skeleton-item"></div>
       <div class="skeleton-item"></div>
       <div class="skeleton-item"></div>
       <div class="skeleton-item"></div>
     </div>
-    <div v-else-if="booking" class="info-grid">
+    <div v-else-if="selectedRoom" class="info-grid">
       <div class="info-item">
-        <span class="label">Phòng:</span>
-        <span class="value">{{ booking.roomNumber }}</span>
+        <span class="label">{{ lang.get("dashboard.rooms") }}:</span>
+        <span class="value">{{ roomNumber }}</span>
       </div>
       <div class="info-item">
-        <span class="label">Loại phòng:</span>
+        <span class="label">{{ lang.get("booking.roomType") }}:</span>
         <span class="value">{{ selectedRoom?.type || "---" }}</span>
       </div>
       <div class="info-item">
-        <span class="label">Giá theo giờ:</span>
-        <span class="value">{{ selectedRoom?.priceHourly?.toLocaleString("vi-VN") || "---" }} VND/giờ</span>
+        <span class="label">{{ lang.get("booking.hourlyPrice") }}:</span>
+        <span class="value">{{ selectedRoom?.priceHourly?.toLocaleString("vi-VN") }} VND/giờ</span>
       </div>
       <div class="info-item">
-        <span class="label">Giá theo đêm:</span>
-        <span class="value">{{ selectedRoom?.priceDaily?.toLocaleString("vi-VN") || "---" }} VND/đêm</span>
+        <span class="label">{{ lang.get("booking.dailyPrice") }}:</span>
+        <span class="value">{{ selectedRoom?.priceDaily?.toLocaleString("vi-VN") }} VND/đêm</span>
       </div>
     </div>
-    <div v-else class="error-message">Không tìm thấy thông tin phòng</div>
+    <div v-else class="error-message">{{ lang.get("booking.roomNotFound") }}</div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from "vue";
-import { hotelStore as store } from "../../../stores/hotelStore";
-import { getBookingById } from "../../../services/bookingService";
+import { ref, watch } from "vue";
+import { languageController as lang } from "../../../controller/languageController";
+import { getRoomByNumber } from "../../../services/roomService";
 
 const props = defineProps({
-  bookingId: {
+  roomNumber: {
     type: String,
     required: true,
   },
+  roomData: {
+    type: Object,
+    default: null,
+  },
 });
 
-const booking = ref(null);
-const isLoading = ref(true);
+const selectedRoom = ref(null);
+const isLoading = ref(false);
 
-const selectedRoom = computed(() => {
-  if (!booking.value) return null;
-  return store.rooms.find((r) => r.number === booking.value.roomNumber);
-});
+// Load room data when roomNumber or roomData changes
+watch(
+  () => ({ roomNumber: props.roomNumber, roomData: props.roomData }),
+  async ({ roomNumber, roomData }) => {
+    // If roomData is provided, use it directly without loading
+    if (roomData) {
+      selectedRoom.value = roomData;
+      return;
+    }
 
-// Fetch booking data on component mount using service
-onMounted(async () => {
-  try {
-    const fetchedBooking = await getBookingById(props.bookingId);
-    booking.value = fetchedBooking;
-  } catch (error) {
-    console.error("Error fetching booking data:", error);
-  } finally {
-    isLoading.value = false;
-  }
-});
+    if (!roomNumber) {
+      selectedRoom.value = null;
+      return;
+    }
+
+    isLoading.value = true;
+    try {
+      const room = await getRoomByNumber(roomNumber);
+      selectedRoom.value = room;
+    } catch (error) {
+      console.error("Error loading room:", error);
+      selectedRoom.value = null;
+    } finally {
+      isLoading.value = false;
+    }
+  },
+  { immediate: true },
+);
 </script>
 
 <style scoped>
@@ -91,31 +107,6 @@ onMounted(async () => {
   }
 }
 
-.info-item {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  padding: 10px;
-  background: white;
-  border-radius: 6px;
-  border: 1px solid #e5e7eb;
-}
-
-.info-item .label {
-  font-size: 11px;
-  color: #6b7280;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.info-item .value {
-  font-size: 13px;
-  color: #374151;
-  font-weight: 700;
-  line-height: 1.4;
-}
-
 .loading-placeholder {
   display: grid;
   grid-template-columns: 1fr;
@@ -144,6 +135,31 @@ onMounted(async () => {
   100% {
     background-position: -200% 0;
   }
+}
+
+.info-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px;
+  background: white;
+  border-radius: 6px;
+  border: 1px solid #e5e7eb;
+}
+
+.info-item .label {
+  font-size: 11px;
+  color: #6b7280;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.info-item .value {
+  font-size: 13px;
+  color: #374151;
+  font-weight: 700;
+  line-height: 1.4;
 }
 
 .error-message {
